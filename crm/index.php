@@ -285,6 +285,15 @@ if (isset($_GET['api'])) {
           await doDelete(id);
         });
       });
+
+      root.querySelectorAll(".card[data-id]").forEach(card=>{
+        card.addEventListener("click", (e)=>{
+          if (e.target && e.target.closest && e.target.closest("[data-action='delete-lead']")) return;
+          const id = card.getAttribute("data-id");
+          if (!id) return;
+          window.location.href = `${CRM_BASE_URL}/lead.php?id=${encodeURIComponent(id)}`;
+        });
+      });
     }
 
     function cardTpl(l){
@@ -397,7 +406,8 @@ if (isset($_GET['api'])) {
         tr.addEventListener("click", (e)=>{
           if (e.target && e.target.closest && e.target.closest("[data-action='delete-lead']")) return;
           const id = tr.getAttribute("data-id");
-          console.log("Open lead:", id);
+          if (!id) return;
+          window.location.href = `${CRM_BASE_URL}/lead.php?id=${encodeURIComponent(id)}`;
         });
       });
     }

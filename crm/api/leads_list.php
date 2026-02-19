@@ -18,4 +18,5 @@ $sql .= " ORDER BY created_at DESC LIMIT 300";
 
 $stmt = db()->prepare($sql);
 $stmt->execute($args);
-json_out(200, ['ok'=>true, 'items'=>$stmt->fetchAll()]);
+$rows = $stmt->fetchAll();
+json_out(200, ['ok'=>true, 'leads'=>$rows, 'items'=>$rows]);
