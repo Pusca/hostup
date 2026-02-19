@@ -3,33 +3,46 @@ declare(strict_types=1);
 require_once __DIR__ . '/../auth.php';
 require_login();
 
-function lead_columns(PDO $pdo): array {
-  $st = $pdo->prepare("SELECT COLUMN_NAME FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'crm_leads'");
-  $st->execute();
-  $cols = $st->fetchAll(PDO::FETCH_COLUMN);
-  $map = [];
-  foreach ($cols as $c) $map[(string)$c] = true;
-  return $map;
-}
-
 $q = trim((string)($_GET['q'] ?? ''));
 $stage = trim((string)($_GET['stage'] ?? ''));
 
-$cols = lead_columns(db());
-$unitsExpr = isset($cols['units']) ? 'units' : (isset($cols['unit']) ? 'unit' : "''");
-$stageExpr = isset($cols['stage']) ? 'stage' : "'new'";
+$queries = [
+  "SELECT id, created_at, name, email, phone, units AS units, stage FROM crm_leads WHERE 1=1",
+  "SELECT id, created_at, name, email, phone, unit AS units, stage FROM crm_leads WHERE 1=1",
+  "SELECT id, created_at, name, email, phone, '' AS units, stage FROM crm_leads WHERE 1=1",
+];
 
-$sql = "SELECT id, created_at, name, email, phone, {$unitsExpr} AS units, {$stageExpr} AS stage FROM crm_leads WHERE 1=1";
-$args = [];
+$rows = null;
+$lastError = 'Leads list error';
 
-if ($stage !== '') { $sql .= " AND stage=?"; $args[] = $stage; }
-if ($q !== '') {
-  $sql .= " AND (name LIKE ? OR email LIKE ? OR phone LIKE ?)";
-  $args[] = "%$q%"; $args[] = "%$q%"; $args[] = "%$q%";
+foreach ($queries as $baseSql) {
+  $sql = $baseSql;
+  $args = [];
+
+  if ($stage !== '') {
+    $sql .= " AND stage=?";
+    $args[] = $stage;
+  }
+  if ($q !== '') {
+    $sql .= " AND (name LIKE ? OR email LIKE ? OR phone LIKE ?)";
+    $args[] = "%$q%";
+    $args[] = "%$q%";
+    $args[] = "%$q%";
+  }
+  $sql .= " ORDER BY created_at DESC LIMIT 300";
+
+  try {
+    $stmt = db()->prepare($sql);
+    $stmt->execute($args);
+    $rows = $stmt->fetchAll();
+    break;
+  } catch (Throwable $e) {
+    $lastError = $e->getMessage();
+  }
 }
-$sql .= " ORDER BY created_at DESC LIMIT 300";
 
-$stmt = db()->prepare($sql);
-$stmt->execute($args);
-$rows = $stmt->fetchAll();
-json_out(200, ['ok'=>true, 'leads'=>$rows, 'items'=>$rows]);
+if ($rows === null) {
+  json_out(500, ['ok' => false, 'error' => 'DB error: ' . $lastError]);
+}
+
+json_out(200, ['ok' => true, 'leads' => $rows, 'items' => $rows]);

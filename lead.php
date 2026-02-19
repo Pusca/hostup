@@ -31,38 +31,50 @@ function request_data(): array {
   return $_POST ?: [];
 }
 
-function table_exists(PDO $pdo, string $table): bool {
-  $st = $pdo->prepare("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?");
-  $st->execute([$table]);
-  return ((int)$st->fetchColumn()) > 0;
-}
+function try_insert_lead(PDO $pdo, array $data): int {
+  $attempts = [
+    [
+      "INSERT INTO crm_leads (source,name,email,phone,units,msg,ip,user_agent,stage) VALUES (?,?,?,?,?,?,?,?,?)",
+      [$data['source'], $data['name'], $data['email'], $data['phone'], $data['units'], $data['msg'], $data['ip'], $data['user_agent'], 'new'],
+    ],
+    [
+      "INSERT INTO crm_leads (name,email,phone,units,msg,stage) VALUES (?,?,?,?,?,?)",
+      [$data['name'], $data['email'], $data['phone'], $data['units'], $data['msg'], 'new'],
+    ],
+    [
+      "INSERT INTO crm_leads (name,email,phone,unit,msg,stage) VALUES (?,?,?,?,?,?)",
+      [$data['name'], $data['email'], $data['phone'], $data['units'], $data['msg'], 'new'],
+    ],
+    [
+      "INSERT INTO crm_leads (name,email,phone,units,message,stage) VALUES (?,?,?,?,?,?)",
+      [$data['name'], $data['email'], $data['phone'], $data['units'], $data['msg'], 'new'],
+    ],
+    [
+      "INSERT INTO crm_leads (name,email,phone,stage) VALUES (?,?,?,?)",
+      [$data['name'], $data['email'], $data['phone'], 'new'],
+    ],
+  ];
 
-function table_columns(PDO $pdo, string $table): array {
-  $st = $pdo->prepare("SELECT COLUMN_NAME FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ?");
-  $st->execute([$table]);
-  $cols = $st->fetchAll(PDO::FETCH_COLUMN);
-  $map = [];
-  foreach ($cols as $c) {
-    $map[(string)$c] = true;
+  $lastError = 'Inserimento non riuscito';
+  foreach ($attempts as [$sql, $params]) {
+    try {
+      $st = $pdo->prepare($sql);
+      $st->execute($params);
+      return (int)$pdo->lastInsertId();
+    } catch (Throwable $e) {
+      $lastError = $e->getMessage();
+    }
   }
-  return $map;
+
+  throw new RuntimeException($lastError);
 }
 
-function insert_dynamic(PDO $pdo, string $table, array $values): int {
-  $cols = array_keys($values);
-  $placeholders = implode(',', array_fill(0, count($cols), '?'));
-  $sql = "INSERT INTO {$table} (" . implode(',', $cols) . ") VALUES ({$placeholders})";
-  $st = $pdo->prepare($sql);
-  $st->execute(array_values($values));
-  return (int)$pdo->lastInsertId();
-}
-
-$data = request_data();
-$name  = clean((string)($data['name'] ?? ''));
-$email = clean((string)($data['email'] ?? ''));
-$phone = clean((string)($data['phone'] ?? ''));
-$units = clean((string)($data['units'] ?? ''));
-$msg   = trim((string)($data['msg'] ?? ''));
+$input = request_data();
+$name = clean((string)($input['name'] ?? ''));
+$email = clean((string)($input['email'] ?? ''));
+$phone = clean((string)($input['phone'] ?? ''));
+$units = clean((string)($input['units'] ?? ''));
+$msg = trim((string)($input['msg'] ?? ''));
 
 if ($name === '' || mb_strlen($name) < 2) {
   json_out(422, ['ok' => false, 'error' => 'Nome non valido']);
@@ -74,48 +86,28 @@ if ($units === '') {
   json_out(422, ['ok' => false, 'error' => 'Seleziona le unita']);
 }
 
-$ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
-$ua = (string)($_SERVER['HTTP_USER_AGENT'] ?? '');
+$leadData = [
+  'source' => 'hostup.it',
+  'name' => $name,
+  'email' => $email,
+  'phone' => ($phone !== '' ? $phone : null),
+  'units' => $units,
+  'msg' => ($msg !== '' ? $msg : null),
+  'ip' => ($_SERVER['REMOTE_ADDR'] ?? null),
+  'user_agent' => ($_SERVER['HTTP_USER_AGENT'] ?? null),
+];
 
 try {
   $pdo = db();
-
-  if (!table_exists($pdo, 'crm_leads')) {
-    json_out(500, ['ok' => false, 'error' => 'Tabella crm_leads non trovata']);
-  }
-
-  $leadCols = table_columns($pdo, 'crm_leads');
-  $payload = [];
-
-  if (isset($leadCols['source'])) $payload['source'] = 'hostup.it';
-  if (isset($leadCols['name'])) $payload['name'] = $name;
-  if (isset($leadCols['email'])) $payload['email'] = $email;
-  if (isset($leadCols['phone'])) $payload['phone'] = ($phone !== '' ? $phone : null);
-  if (isset($leadCols['units'])) $payload['units'] = $units;
-  if (isset($leadCols['unit'])) $payload['unit'] = $units;
-  if (isset($leadCols['msg'])) $payload['msg'] = ($msg !== '' ? $msg : null);
-  if (isset($leadCols['message'])) $payload['message'] = ($msg !== '' ? $msg : null);
-  if (isset($leadCols['ip'])) $payload['ip'] = ($ip !== '' ? $ip : null);
-  if (isset($leadCols['user_agent'])) $payload['user_agent'] = ($ua !== '' ? $ua : null);
-  if (isset($leadCols['stage'])) $payload['stage'] = 'new';
-
-  if (empty($payload['name']) || empty($payload['email'])) {
-    json_out(500, ['ok' => false, 'error' => 'Schema crm_leads incompleto (name/email mancanti)']);
-  }
-
   $pdo->beginTransaction();
-  $leadId = insert_dynamic($pdo, 'crm_leads', $payload);
 
-  if (table_exists($pdo, 'crm_lead_notes')) {
-    $notesCols = table_columns($pdo, 'crm_lead_notes');
-    $notePayload = [];
-    if (isset($notesCols['lead_id'])) $notePayload['lead_id'] = $leadId;
-    if (isset($notesCols['user_id'])) $notePayload['user_id'] = null;
-    if (isset($notesCols['note'])) $notePayload['note'] = 'Lead acquisito dalla landing HostUp';
-    if (isset($notesCols['kind'])) $notePayload['kind'] = 'system';
-    if (isset($notePayload['lead_id']) && isset($notePayload['note'])) {
-      insert_dynamic($pdo, 'crm_lead_notes', $notePayload);
-    }
+  $leadId = try_insert_lead($pdo, $leadData);
+
+  try {
+    $pdo->prepare("INSERT INTO crm_lead_notes (lead_id, user_id, note, kind) VALUES (?,?,?,?)")
+      ->execute([$leadId, null, 'Lead acquisito dalla landing HostUp', 'system']);
+  } catch (Throwable $e) {
+    // Note non bloccanti: il lead e' gia' salvato.
   }
 
   $pdo->commit();
@@ -125,7 +117,7 @@ try {
   $subject = 'Nuovo lead HostUp (CRM) #' . $leadId;
   $body  = "Nuovo lead salvato nel CRM.\n\n";
   $body .= "ID: $leadId\nNome: $name\nEmail: $email\nTelefono: " . ($phone ?: 'n/d') . "\nUnita: $units\n";
-  $body .= "Note: " . ($msg ?: 'n/d') . "\nIP: " . ($ip ?: 'n/d') . "\n";
+  $body .= "Note: " . ($msg ?: 'n/d') . "\nIP: " . (string)($leadData['ip'] ?: 'n/d') . "\n";
   $headers = "From: HostUp <{$fromEmail}>\r\n";
   $headers .= "Reply-To: {$name} <{$email}>\r\n";
   $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
