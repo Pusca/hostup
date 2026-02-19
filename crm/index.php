@@ -269,7 +269,7 @@ if (isset($_GET['api'])) {
       `).join("");
 
       for (const s of STAGES) {
-        const body = root.querySelector(\`.colBody[data-stage="\${CSS.escape(s.key)}"]\`);
+        const body = root.querySelector(`.colBody[data-stage="${CSS.escape(s.key)}"]`);
         if(!body) continue;
 
         const list = byStage[s.key].slice().sort((a,b) => Number(b.id||0)-Number(a.id||0));
