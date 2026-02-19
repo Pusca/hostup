@@ -1,0 +1,1109 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HostUp — Gestione Affitti Brevi 360° (Automatizzata)</title>
+  <meta name="description" content="HostUp gestisce il tuo immobile in affitto breve a 360°: burocrazia, foto professionali e immagine online, automazione, pulizie, gestione ospiti, assicurazione e app di controllo. Tu incassi, noi facciamo tutto." />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="HostUp — Gestione Affitti Brevi 360°" />
+  <meta property="og:description" content="Tu incassi. Noi facciamo tutto. App di controllo totale, aggiornamenti giornalieri, strategie OTA + sito + affiliazioni estere." />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root{
+      --bg: #0B1220;
+      --panel: rgba(255,255,255,.06);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --stroke: rgba(255,255,255,.12);
+
+      --navy: #0B1B3A;
+      --blue: #1F6BFF;
+      --cyan: #11D3C5;
+
+      --grad: linear-gradient(135deg, var(--cyan) 0%, var(--blue) 55%, #4A8BFF 100%);
+      --grad2: radial-gradient(900px 380px at 20% 10%, rgba(17,211,197,.22), transparent 55%),
+               radial-gradient(800px 380px at 85% 25%, rgba(31,107,255,.22), transparent 55%),
+               radial-gradient(900px 420px at 45% 120%, rgba(74,139,255,.15), transparent 60%);
+
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --shadow2: 0 10px 28px rgba(0,0,0,.35);
+
+      --radius: 18px;
+      --radius2: 24px;
+
+      --container: 1120px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+      line-height:1.45;
+      overflow-x:hidden;
+    }
+
+    a{color:inherit;text-decoration:none}
+    button,input,select,textarea{font:inherit}
+    .container{max-width:var(--container); margin:0 auto; padding:0 20px}
+    .bgfx{
+      position:fixed; inset:0;
+      background: var(--grad2);
+      pointer-events:none;
+      z-index:-1;
+    }
+
+    /* Topbar */
+    .topbar{
+      position:sticky; top:0;
+      backdrop-filter: blur(14px);
+      background: rgba(11,18,32,.55);
+      border-bottom: 1px solid var(--stroke);
+      z-index:20;
+    }
+    .topbar-inner{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:16px; padding:14px 0;
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+      min-width: 180px;
+    }
+    .logo-badge{
+      width:42px; height:42px;
+      border-radius:14px;
+      background: var(--grad);
+      box-shadow: var(--shadow2);
+      display:grid; place-items:center;
+      border: 1px solid rgba(255,255,255,.18);
+    }
+    .logo-badge svg{width:22px;height:22px; fill:white; opacity:.95}
+    .brand-name{
+      font-weight:800; letter-spacing:-.02em;
+      display:flex; align-items:baseline;
+      font-size:18px;
+    }
+    .brand-name .host{color:rgba(255,255,255,.92)}
+    .brand-name .up{
+      background: var(--grad);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+      font-weight:900;
+      margin-left:0;
+    }
+    nav{
+      display:flex; align-items:center; gap:18px;
+    }
+    nav a{
+      color: var(--muted);
+      font-size:14px;
+      padding:8px 10px;
+      border-radius:12px;
+      transition:.2s;
+    }
+    nav a:hover{background: rgba(255,255,255,.06); color: var(--text)}
+    .cta-row{display:flex; align-items:center; gap:10px}
+    .btn{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding:10px 14px;
+      border-radius: 14px;
+      cursor:pointer;
+      transition: .2s transform, .2s background, .2s border;
+      display:inline-flex; align-items:center; gap:10px;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{transform: translateY(-1px); background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.18)}
+    .btn-primary{
+      border:none;
+      background: var(--grad);
+      box-shadow: var(--shadow2);
+    }
+    .btn-primary:hover{transform: translateY(-2px)}
+    .btn svg{width:16px;height:16px; opacity:.95}
+
+    /* Hero */
+    .hero{padding: 46px 0 18px;}
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.12fr .88fr;
+      gap: 26px;
+      align-items:stretch;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      padding:6px 10px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size:12px;
+    }
+    .dot{
+      width:8px;height:8px;border-radius:99px;background: var(--grad);
+      box-shadow: 0 0 0 4px rgba(17,211,197,.12);
+    }
+    h1{
+      margin:14px 0 12px;
+      font-size: clamp(34px, 4.2vw, 54px);
+      line-height:1.02;
+      letter-spacing:-.03em;
+    }
+    .lead{
+      margin:0 0 14px;
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 60ch;
+    }
+    .hero-actions{
+      display:flex; gap:12px; flex-wrap:wrap;
+      margin-top: 14px;
+    }
+    .mini{
+      margin-top: 12px;
+      display:flex; gap:12px; flex-wrap:wrap;
+      color: rgba(255,255,255,.72);
+      font-size: 13px;
+    }
+    .mini span{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      border-radius: 999px;
+    }
+    .mini svg{width:14px;height:14px; opacity:.9}
+
+    /* Right card */
+    .card{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(650px 260px at 20% 10%, rgba(17,211,197,.30), transparent 52%),
+                  radial-gradient(650px 260px at 80% 0%, rgba(31,107,255,.28), transparent 55%);
+      pointer-events:none;
+      z-index:0;
+    }
+    .card-inner{position:relative; z-index:1; padding:18px}
+    .card h3{margin:0 0 10px; font-size:16px; letter-spacing:-.01em}
+    .card p{margin:0 0 14px; color: var(--muted); font-size: 13.5px}
+    .stats{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .stat{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.20);
+      border-radius: 16px;
+      padding:12px;
+    }
+    .stat .k{
+      font-weight:900;
+      font-size: 18px;
+      letter-spacing:-.02em;
+      background: var(--grad);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+    .stat .t{color: var(--muted); font-size: 12.5px; margin-top:4px}
+
+    /* Sections */
+    section{padding: 34px 0}
+    .section-title{
+      display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap;
+      margin-bottom: 14px;
+    }
+    .section-title h2{
+      margin:0;
+      font-size: 22px;
+      letter-spacing:-.02em;
+    }
+    .section-title p{
+      margin:0;
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 70ch;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .tile{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      border-radius: var(--radius);
+      padding:16px;
+      position:relative;
+      overflow:hidden;
+      transition:.2s transform, .2s background;
+    }
+    .tile:hover{transform: translateY(-2px); background: rgba(255,255,255,.07)}
+    .tile .ico{
+      width:42px;height:42px;border-radius: 16px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
+      display:grid; place-items:center;
+      margin-bottom: 12px;
+    }
+    .tile .ico svg{
+      width:20px;height:20px;
+      fill: url(#g);
+    }
+    .tile h4{margin:0 0 6px; font-size:15px; letter-spacing:-.01em}
+    .tile p{margin:0; color: var(--muted); font-size: 13.5px}
+
+    /* How it works */
+    .steps{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    .step{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      border-radius: var(--radius);
+      padding:16px;
+      overflow:hidden;
+      position:relative;
+    }
+    .badge{
+      width:34px;height:34px;border-radius: 14px;
+      background: var(--grad);
+      display:grid; place-items:center;
+      font-weight:900;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow2);
+    }
+    .step h4{margin:0 0 6px}
+    .step p{margin:0; color: var(--muted); font-size: 13.5px}
+
+    /* App preview */
+    .app{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      border-radius: var(--radius2);
+      overflow:hidden;
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap:0;
+    }
+    .app-left{padding:18px}
+    .app-right{
+      padding:18px;
+      background: rgba(0,0,0,.20);
+      border-left:1px solid var(--stroke);
+    }
+    .chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px}
+    .chip{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      border-radius: 999px;
+      padding:8px 10px;
+      color: rgba(255,255,255,.78);
+      font-size: 13px;
+      display:inline-flex; gap:8px; align-items:center;
+    }
+    .chip svg{width:14px;height:14px; opacity:.9}
+    .mock{
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      border-radius: 22px;
+      overflow:hidden;
+      box-shadow: var(--shadow2);
+    }
+    .mock-top{
+      display:flex; gap:8px; align-items:center;
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+    }
+    .dots{display:flex; gap:6px}
+    .dots span{
+      width:9px;height:9px;border-radius:99px;
+      background: rgba(255,255,255,.20);
+    }
+    .mock-body{padding:12px}
+    .row{
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 10px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      border-radius: 14px;
+      padding:10px;
+      margin-bottom:10px;
+    }
+    .row:last-child{margin-bottom:0}
+    .row .left{display:flex; align-items:center; gap:10px}
+    .pill2{
+      padding:6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.78);
+      font-size: 12px;
+      white-space:nowrap;
+    }
+    .value{
+      font-weight:900;
+      letter-spacing:-.01em;
+      background: var(--grad);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+      white-space:nowrap;
+    }
+
+    /* FAQ accordion */
+    .faq{
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    .faq-item{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      border-radius: 16px;
+      margin-bottom: 10px;
+      overflow:hidden;
+    }
+    .faq-question{
+      width:100%;
+      padding:16px 18px;
+      background:none;
+      border:none;
+      color: var(--text);
+      font-size:15px;
+      font-weight:600;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      cursor:pointer;
+      text-align:left;
+    }
+    .faq-icon{
+      font-size:20px;
+      transition: transform .2s;
+      line-height:1;
+      opacity:.9;
+    }
+    .faq-answer{
+      max-height:0;
+      overflow:hidden;
+      padding:0 18px;
+      color: var(--muted);
+      font-size:14px;
+      transition: max-height .25s ease, padding .25s ease;
+    }
+    .faq-item.active .faq-answer{
+      max-height:220px;
+      padding: 0 18px 16px;
+    }
+    .faq-item.active .faq-icon{
+      transform: rotate(45deg);
+    }
+
+    /* CTA */
+    .cta{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      border-radius: var(--radius2);
+      padding: 22px;
+      position:relative;
+      overflow:hidden;
+    }
+    .cta::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(750px 320px at 15% 20%, rgba(17,211,197,.26), transparent 60%),
+                  radial-gradient(750px 320px at 85% 15%, rgba(31,107,255,.22), transparent 60%);
+      pointer-events:none;
+    }
+    .cta-inner{position:relative; z-index:1; display:grid; grid-template-columns: 1fr; gap: 18px; align-items:start}
+    .cta h2{margin:0 0 8px; font-size: 22px; letter-spacing:-.02em}
+    .cta p{margin:0; color: var(--muted); font-size: 14px}
+    form{display:grid; gap:10px;}
+    .field{display:grid; gap:6px;}
+    .field label{font-size: 12px; color: rgba(255,255,255,.72)}
+    .field input, .field select, .field textarea{
+      padding:12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
+      transition:.2s border, .2s background;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus{
+      border-color: rgba(17,211,197,.55);
+      background: rgba(0,0,0,.28);
+    }
+    textarea{min-height: 90px; resize: vertical}
+    .fineprint{font-size:12px; color: rgba(255,255,255,.62)}
+
+    .toast{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      max-width: 360px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow2);
+      color: rgba(255,255,255,.9);
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events:none;
+      transition: .25s;
+      z-index: 50;
+    }
+    .toast.show{transform: translateY(0); opacity: 1}
+
+    /* Footer */
+    footer{
+      padding: 22px 0 34px;
+      border-top: 1px solid var(--stroke);
+      color: rgba(255,255,255,.65);
+      font-size: 13px;
+    }
+    .footer-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items:start;
+    }
+    .footer-links{
+      display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .footer-links a{color: rgba(255,255,255,.70)}
+    .footer-links a:hover{color: rgba(255,255,255,.92)}
+
+    /* Responsive */
+    @media (max-width: 920px){
+      .hero-grid{grid-template-columns: 1fr;}
+      nav{display:none;}
+      .grid{grid-template-columns: 1fr 1fr}
+      .steps{grid-template-columns: 1fr}
+      .app{grid-template-columns: 1fr}
+      .app-right{border-left:none; border-top:1px solid var(--stroke)}
+      .cta-inner{grid-template-columns: 1fr}
+      .footer-grid{grid-template-columns: 1fr}
+      .footer-links{justify-content:flex-start}
+    }
+    @media (max-width: 520px){
+      .grid{grid-template-columns: 1fr}
+      .brand{min-width:auto}
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *{scroll-behavior:auto !important; transition:none !important}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bgfx" aria-hidden="true"></div>
+
+  <!-- SVG gradient for icons -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0" stop-color="#11D3C5"></stop>
+        <stop offset="0.55" stop-color="#1F6BFF"></stop>
+        <stop offset="1" stop-color="#4A8BFF"></stop>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <header class="topbar">
+    <div class="container">
+      <div class="topbar-inner">
+        <a class="brand" href="#top" aria-label="HostUp Home">
+          <div class="logo-badge" aria-hidden="true" title="HostUp">
+            <!-- HU monogram (simple) -->
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6.5 5.5c0-.55.45-1 1-1h2c.55 0 1 .45 1 1v4.2l3.25-3.25c.2-.2.46-.3.73-.3H17c.55 0 1 .45 1 1v11c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1V11.7l-3.25 3.25c-.2.2-.46.3-.73.3H7.5c-.55 0-1-.45-1-1v-8.8Z"/>
+            </svg>
+          </div>
+          <div class="brand-name">
+            <span class="host">Host</span><span class="up">Up</span>
+          </div>
+        </a>
+
+        <nav aria-label="Navigazione">
+          <a href="#servizi">Servizi</a>
+          <a href="#come-funziona">Come funziona</a>
+          <a href="#app">App</a>
+          <a href="#faq">FAQ</a>
+          <a href="#contatto">Contatto</a>
+        </nav>
+
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#contatto">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21 3 12l1.4-1.4L12 18.2l7.6-7.6L21 12 12 21Z"/></svg>
+            Valutazione immobile
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-grid">
+          <div>
+            <div class="pill">
+              <span class="dot" aria-hidden="true"></span>
+              Gestione di immobili <strong style="color:rgba(255,255,255,.9); font-weight:800">per affitti brevi</strong>
+            </div>
+
+            <h1>
+              Tu incassi.<br/>
+              Noi gestiamo tutto.
+            </h1>
+
+            <p class="lead">
+              <strong>HostUp</strong> è un servizio di gestione <strong>completa e automatizzata</strong> per affitti brevi.
+              Ci occupiamo di <strong>servizi fotografici professionali</strong> e della <strong>cura dell’immagine online dell’immobile</strong>,
+              della parte burocratica, dell’operatività quotidiana, delle pulizie, dell’assicurazione e
+              dell’automazione totale della gestione.
+              <br><br>
+              L’immobile viene promosso con <strong>strategie moderne su OTA, sul nostro sito</strong> e tramite
+              <strong>affiliazioni con attività estere</strong>.
+              Il cliente <strong>riceve i guadagni e non deve fare nulla</strong>: può solo controllare tutto in tempo reale tramite la nostra app.
+            </p>
+
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#contatto">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M2 21 23 12 2 3v7l15 2-15 2v7Z"/></svg>
+                Richiedi una valutazione
+              </a>
+              <a class="btn" href="#servizi">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 15.5 5 8.5l1.4-1.4L12 12.7l5.6-5.6L19 8.5l-7 7Z"/></svg>
+                Vedi i servizi
+              </a>
+            </div>
+
+            <div class="mini">
+              <span>
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm-1 14-4-4 1.4-1.4L11 13.2l5.6-5.6L18 9l-7 7Z"/></svg>
+                Aggiornamenti giornalieri
+              </span>
+              <span>
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 1 3 5v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V5l-9-4Zm0 20c-4-1.2-7-5-7-9.2V6.3L12 3l7 3.3v5.5C19 16 16 19.8 12 21Z"/></svg>
+                Assicurazione & tutela
+              </span>
+              <span>
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M17 1H7C5.9 1 5 1.9 5 3v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2Zm0 18H7V5h10v14Z"/></svg>
+                App di controllo totale
+              </span>
+            </div>
+          </div>
+
+          <aside class="card" aria-label="In breve">
+            <div class="card-inner">
+              <h3>In breve: una regia unica, risultati misurabili</h3>
+              <p>
+                Gestiamo la parte operativa e strategica: distribuzione su OTA, canale diretto sul nostro sito,
+                automazioni e qualità costante per aumentare prenotazioni e valore medio.
+              </p>
+
+              <div class="stats">
+                <div class="stat">
+                  <div class="k">360°</div>
+                  <div class="t">Gestione completa</div>
+                </div>
+                <div class="stat">
+                  <div class="k">24/7</div>
+                  <div class="t">Operatività & supporto</div>
+                </div>
+                <div class="stat">
+                  <div class="k">OTA+</div>
+                  <div class="t">Strategie moderne</div>
+                </div>
+                <div class="stat">
+                  <div class="k">App</div>
+                  <div class="t">Controllo totale</div>
+                </div>
+              </div>
+
+              <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+                <span class="pill2">Burocrazia</span>
+                <span class="pill2">Foto & immagine</span>
+                <span class="pill2">Pulizie</span>
+                <span class="pill2">Automazione</span>
+                <span class="pill2">Assicurazione</span>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- SERVIZI -->
+    <section id="servizi">
+      <div class="container">
+        <div class="section-title">
+          <h2>Servizio a 360° (tutto incluso)</h2>
+          <p>
+            Dalla preparazione dell’immobile alla gestione quotidiana: HostUp è una soluzione completa e automatizzata.
+          </p>
+        </div>
+
+        <div class="grid">
+          <article class="tile">
+            <div class="ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V5l-9-4Z"/></svg>
+            </div>
+            <h4>Burocrazia & conformità</h4>
+            <p>Gestiamo procedure e adempimenti necessari: tu sei coperto e non perdi tempo.</p>
+          </article>
+
+          <article class="tile">
+            <div class="ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M21 6h-3.17L16 4H8L6.17 6H3v14h18V6Zm-9 12a5 5 0 1 1 5-5 5 5 0 0 1-5 5Z"/></svg>
+            </div>
+            <h4>Foto & immagine online</h4>
+            <p>Servizio fotografico e ottimizzazione della presentazione su OTA e canali diretti.</p>
+          </article>
+
+          <article class="tile">
+            <div class="ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 15h-2v-6h2Zm0-8h-2V7h2Z"/></svg>
+            </div>
+            <h4>Automazione completa</h4>
+            <p>Check-in/out, messaggi e flussi operativi: meno errori, più velocità, più qualità.</p>
+          </article>
+
+          <article class="tile">
+            <div class="ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 10h10v2H7v-2Zm0 4h10v2H7v-2ZM5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/></svg>
+            </div>
+            <h4>Pulizie & qualità</h4>
+            <p>Coordinamento pulizie/turni e standard costanti per recensioni migliori.</p>
+          </article>
+
+          <article class="tile">
+            <div class="ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16v2H4V4Zm0 14h16v2H4v-2Zm0-7h16v2H4v-2Z"/></svg>
+            </div>
+            <h4>Gestione ospiti 24/7</h4>
+            <p>Comunicazioni, assistenza e imprevisti: operiamo noi, con processi chiari.</p>
+          </article>
+
+          <article class="tile">
+            <div class="ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10Zm10 8h8V11h-8v10ZM3 21h8v-6H3v6Zm10-18v6h8V3h-8Z"/></svg>
+            </div>
+            <h4>Strategie OTA + sito + affiliazioni</h4>
+            <p>Ottimizzazione su OTA, canale diretto sul nostro sito e affiliazioni con attività estere.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- COME FUNZIONA -->
+    <section id="come-funziona">
+      <div class="container">
+        <div class="section-title">
+          <h2>Come funziona (in 3 step)</h2>
+          <p>Setup veloce, gestione totale e report chiari. Tu controlli, noi eseguiamo.</p>
+        </div>
+
+        <div class="steps">
+          <div class="step">
+            <div class="badge">1</div>
+            <h4>Analisi & onboarding</h4>
+            <p>Valutiamo immobile e potenziale, definiamo strategia e obiettivi.</p>
+          </div>
+          <div class="step">
+            <div class="badge">2</div>
+            <h4>Setup completo</h4>
+            <p>Foto, automazioni, procedure, pulizie e impostazione dei canali di vendita.</p>
+          </div>
+          <div class="step">
+            <div class="badge">3</div>
+            <h4>Gestione & ottimizzazione</h4>
+            <p>Operatività quotidiana + ottimizzazione continua su OTA e canali diretti.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- APP -->
+    <section id="app">
+      <div class="container">
+        <div class="section-title">
+          <h2>App proprietario: controllo totale</h2>
+          <p>
+            Aggiornamenti giornalieri su prenotazioni, incassi e operatività. Massima trasparenza, zero lavoro per te.
+          </p>
+        </div>
+
+        <div class="app">
+          <div class="app-left">
+            <div class="pill">
+              <span class="dot" aria-hidden="true"></span>
+              Owner Dashboard • aggiornamenti giornalieri
+            </div>
+
+            <h3 style="margin:12px 0 8px; letter-spacing:-.02em;">Vedi tutto, senza intervenire</h3>
+            <p style="margin:0; color:var(--muted); font-size:14px; max-width:70ch;">
+              HostUp opera al posto tuo. L’app mostra andamento prenotazioni, ricavi, stato pulizie/manutenzioni,
+              comunicazioni e report: tu puoi monitorare quando vuoi.
+            </p>
+
+            <div class="chips" aria-label="Funzionalità app">
+              <span class="chip">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 13h8V3H3v10Zm10 8h8V11h-8v10ZM3 21h8v-6H3v6Zm10-18v6h8V3h-8Z"/></svg>
+                Dashboard ricavi
+              </span>
+              <span class="chip">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 11h-2V7h2Zm0 4h-2v-2h2Z"/></svg>
+                Note giornaliere
+              </span>
+              <span class="chip">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 10h10v2H7v-2Zm0 4h10v2H7v-2ZM5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/></svg>
+                Stato pulizie & task
+              </span>
+              <span class="chip">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 8V7l-8 5L4 7v1l8 5 8-5Zm0-3c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2h16Z"/></svg>
+                Comunicazioni
+              </span>
+              <span class="chip">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 1 3 5v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V5l-9-4Z"/></svg>
+                Assicurazione
+              </span>
+              <span class="chip">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-7-7Zm1 8V3.5L20.5 10H14Z"/></svg>
+                Report automatici
+              </span>
+            </div>
+          </div>
+
+          <div class="app-right">
+            <div class="mock" aria-label="Mock dashboard">
+              <div class="mock-top">
+                <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+                <div style="margin-left:auto; font-size:12px; color:rgba(255,255,255,.65)">HostUp • Owner Dashboard</div>
+              </div>
+              <div class="mock-body">
+                <div class="row">
+                  <div class="left">
+                    <span class="pill2">Oggi</span>
+                    <span style="color:rgba(255,255,255,.78); font-size:13px;">Prenotazioni</span>
+                  </div>
+                  <div class="value">+2</div>
+                </div>
+
+                <div class="row">
+                  <div class="left">
+                    <span class="pill2">Settimana</span>
+                    <span style="color:rgba(255,255,255,.78); font-size:13px;">Ricavi stimati</span>
+                  </div>
+                  <div class="value">€ 1.420</div>
+                </div>
+
+                <div class="row">
+                  <div class="left">
+                    <span class="pill2">Task</span>
+                    <span style="color:rgba(255,255,255,.78); font-size:13px;">Pulizia</span>
+                  </div>
+                  <div class="pill2">In corso</div>
+                </div>
+
+                <div class="row">
+                  <div class="left">
+                    <span class="pill2">OTA+</span>
+                    <span style="color:rgba(255,255,255,.78); font-size:13px;">Prezzi ottimizzati</span>
+                  </div>
+                  <div class="pill2">Aggiornato</div>
+                </div>
+              </div>
+            </div>
+
+            <p style="margin:12px 0 0; color:rgba(255,255,255,.66); font-size:12.5px;">
+              *Dati dimostrativi. La dashboard reale include storico, breakdown per canale e note operative giornaliere.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ (ACCORDION) -->
+    <section id="faq">
+      <div class="container">
+        <div class="section-title">
+          <h2>Domande frequenti</h2>
+          <p>Apri solo ciò che ti serve. Il resto lo gestiamo noi.</p>
+        </div>
+
+        <div class="faq">
+          <div class="faq-item">
+            <button class="faq-question" type="button">
+              Devo occuparmi di qualcosa?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              No. Tu ricevi i guadagni e puoi controllare l’andamento tramite l’app.
+              HostUp gestisce operatività, ospiti, pulizie, burocrazia e automazioni.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button">
+              Gestite anche foto e presentazione online?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Sì. Realizziamo servizi fotografici professionali e curiamo l’immagine dell’immobile
+              su OTA e canali diretti per massimizzare attrattività e prenotazioni.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button">
+              Come aumentate i guadagni?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Con pricing dinamico, ottimizzazione continua su OTA, visibilità sul nostro sito
+              e affiliazioni con partner esteri che generano domanda qualificata.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button">
+              È tutto assicurato?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Sì. Prevediamo coperture assicurative e procedure di tutela per proteggere l’immobile
+              e gestire eventuali imprevisti in modo trasparente.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA / FORM -->
+    <section id="contatto">
+      <div class="container">
+        <div class="cta">
+          <div class="cta-inner">
+            <div>
+              <h2>Richiedi una valutazione dell’immobile</h2>
+              <p>
+                Compila il form: ti ricontattiamo con una prima analisi e una proposta di gestione.
+                (Puoi collegare questo form al tuo backend PHP o a un CRM.)
+              </p>
+
+              <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+                <span class="pill2">Gestione 360°</span>
+                <span class="pill2">Automazione</span>
+                <span class="pill2">OTA + Sito</span>
+                <span class="pill2">Report giornalieri</span>
+              </div>
+            </div>
+
+            <form id="leadForm" novalidate>
+              <div class="field">
+                <label for="name">Nome e cognome</label>
+                <input id="name" name="name" placeholder="Es. Marco Rossi" autocomplete="name" required />
+              </div>
+
+           
+
+
+              <div class="field">
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" placeholder="nome@email.it" autocomplete="email" required />
+              </div>
+
+              <div class="field">
+                <label for="phone">Telefono</label>
+                <input id="phone" name="phone" placeholder="+39 ..." autocomplete="tel" />
+              </div>
+
+              <div class="field">
+                <label for="units">Quante unità vuoi gestire?</label>
+                <select id="units" name="units" required>
+                  <option value="" selected disabled>Seleziona</option>
+                  <option>1</option>
+                  <option>2–3</option>
+                  <option>4–10</option>
+                  <option>10+</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="msg">Note sull’immobile</label>
+                <textarea id="msg" name="msg" placeholder="Città/zona, tipologia, eventuali dettagli utili..."></textarea>
+              </div>
+
+              <button class="btn btn-primary" type="submit">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M2 21 23 12 2 3v7l15 2-15 2v7Z"/></svg>
+                Invia richiesta
+              </button>
+
+              <div class="fineprint">
+                Inviando accetti di essere ricontattato da HostUp. (Inserisci qui la tua privacy policy / link.)
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="container">
+        <div class="footer-grid">
+          <div>
+            <div class="brand" style="gap:10px; margin-bottom:10px;">
+              <div class="logo-badge" aria-hidden="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6.5 5.5c0-.55.45-1 1-1h2c.55 0 1 .45 1 1v4.2l3.25-3.25c.2-.2.46-.3.73-.3H17c.55 0 1 .45 1 1v11c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1V11.7l-3.25 3.25c-.2.2-.46.3-.73.3H7.5c-.55 0-1-.45-1-1v-8.8Z"/>
+                </svg>
+              </div>
+              <div class="brand-name" style="font-size:16px;">
+                <span class="host">Host</span><span class="up">Up</span>
+              </div>
+            </div>
+            <div style="color: rgba(255,255,255,.65); max-width:70ch;">
+              Gestione affitti brevi a 360° con automazione, operatività e strategie moderne di distribuzione.
+            </div>
+            <div style="margin-top:10px; color: rgba(255,255,255,.55);">
+              © <span id="year"></span> HostUp. Tutti i diritti riservati.
+            </div>
+          </div>
+
+          <div class="footer-links">
+            <a href="#servizi">Servizi</a>
+            <a href="#come-funziona">Come funziona</a>
+            <a href="#app">App</a>
+            <a href="#faq">FAQ</a>
+            <a href="#contatto">Contatto</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script>
+    // Smooth scroll for in-page links
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const id = a.getAttribute("href");
+      if (id.length <= 1) return;
+
+      const el = document.querySelector(id);
+      if (!el) return;
+
+      e.preventDefault();
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    // Year
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // FAQ accordion
+    document.querySelectorAll(".faq-question").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const item = btn.parentElement;
+        item.classList.toggle("active");
+      });
+    });
+
+    // Form validation + fake submit (replace with your backend endpoint)
+    const form = document.getElementById("leadForm");
+    const toast = document.getElementById("toast");
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.remove("show"), 3400);
+    }
+
+    function isEmail(v) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const data = Object.fromEntries(new FormData(form).entries());
+
+      if (!data.name || data.name.trim().length < 2) {
+        showToast("Inserisci nome e cognome.");
+        document.getElementById("name").focus();
+        return;
+      }
+      if (!data.email || !isEmail(data.email)) {
+        showToast( "Inserisci un'email valida.");
+        document.getElementById("email").focus();
+        return;
+      }
+      if (!data.units) {
+        showToast("Seleziona quante unità vuoi gestire.");
+        document.getElementById("units").focus();
+        return;
+      }
+
+      // 👉 QUI: collega al tuo backend
+      // await fetch("/api/lead.php", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify(data)
+      // });
+            // 👉 Collegamento reale al backend PHP
+      const res = await fetch("lead.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const out = await res.json().catch(() => ({}));
+
+      if (!res.ok || !out.ok) {
+        showToast(out.error || "Errore invio richiesta. Riprova tra poco.");
+        return;
+      }
+
+
+//fatto qui sopra
+
+      // Demo UX
+      showToast("Richiesta inviata! Ti ricontattiamo a breve.");
+      form.reset();
+    });
+  </script>
+  
+
+</body>
+</html>
