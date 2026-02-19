@@ -18,6 +18,10 @@ if ($id<=0 || $note==='' || !in_array($kind,$allowedKinds,true)) {
 db()->prepare("INSERT INTO crm_lead_notes (lead_id,user_id,note,kind) VALUES (?,?,?,?)")
   ->execute([$id,$u['id'],$note,$kind]);
 
-db()->prepare("UPDATE crm_leads SET last_contact_at=NOW() WHERE id=?")->execute([$id]);
+try {
+  db()->prepare("UPDATE crm_leads SET last_contact_at=NOW() WHERE id=?")->execute([$id]);
+} catch (Throwable $e) {
+  // Column may not exist on older schemas; note is already stored.
+}
 
 json_out(200, ['ok'=>true]);

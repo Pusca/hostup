@@ -1082,13 +1082,24 @@
       //   body: JSON.stringify(data)
       // });
             // 👉 Collegamento reale al backend PHP
-      const res = await fetch("lead.php", {
+      let res = await fetch("lead.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       });
 
-      const out = await res.json().catch(() => ({}));
+      let out = await res.json().catch(() => ({}));
+
+      if (!res.ok || !out.ok) {
+        const body = new URLSearchParams();
+        Object.entries(data).forEach(([k, v]) => body.append(k, String(v ?? "")));
+        res = await fetch("lead.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+          body: body.toString()
+        });
+        out = await res.json().catch(() => ({}));
+      }
 
       if (!res.ok || !out.ok) {
         showToast(out.error || "Errore invio richiesta. Riprova tra poco.");
