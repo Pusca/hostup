@@ -1,0 +1,255 @@
+.cm-alert {
+  margin: 14px 0 18px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, .14);
+}
+
+.cm-alert.success {
+  background: rgba(17, 211, 197, .12);
+}
+
+.cm-alert.error {
+  background: rgba(255, 93, 93, .12);
+}
+
+.cm-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 14px 0 18px;
+}
+
+.cm-stat {
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, .06);
+  border-radius: var(--r2);
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.cm-stat-label {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.cm-stat-value {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -.03em;
+}
+
+.cm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.cm-panel {
+  padding: 16px;
+}
+
+.cm-form {
+  display: grid;
+  gap: 10px;
+}
+
+.cm-form label,
+.cm-check {
+  font-size: 12px;
+  color: rgba(255, 255, 255, .74);
+}
+
+.cm-form-split,
+.cm-form-third,
+.cm-form-grid4 {
+  display: grid;
+  gap: 10px;
+}
+
+.cm-form-split {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cm-form-third {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cm-form-grid4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cm-form-submit {
+  display: flex;
+  align-items: end;
+}
+
+.cm-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cm-actions-cell {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cm-kv {
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, .86);
+}
+
+.cm-url-card {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(0, 0, 0, .16);
+  border-radius: 16px;
+}
+
+.cm-url-title {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.cm-url-card code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: rgba(255, 255, 255, .9);
+}
+
+.cm-occupancy-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cm-day {
+  border-radius: 16px;
+  padding: 12px;
+  min-height: 108px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .04);
+}
+
+.cm-day.free {
+  background: rgba(17, 211, 197, .10);
+}
+
+.cm-day.busy {
+  background: rgba(255, 176, 59, .14);
+}
+
+.cm-day-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.cm-day-top span,
+.cm-day-note,
+.cm-muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cm-day-status {
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.cm-connection-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cm-connection-card {
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(0, 0, 0, .16);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.cm-inline-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cm-quote {
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(0, 0, 0, .14);
+  border-radius: 16px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cm-quote-total {
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.cm-booking-state {
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.cm-booking-state.free {
+  background: rgba(17, 211, 197, .12);
+}
+
+.cm-booking-state.busy {
+  background: rgba(255, 93, 93, .12);
+}
+
+.cm-property-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.cm-public-card {
+  display: grid;
+  gap: 10px;
+}
+
+@media (max-width: 1100px) {
+  .cm-stats,
+  .cm-form-grid4,
+  .cm-property-list,
+  .cm-occupancy-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .cm-grid,
+  .cm-form-split,
+  .cm-form-third,
+  .cm-form-grid4,
+  .cm-property-list,
+  .cm-stats,
+  .cm-occupancy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cm-connection-card,
+  .cm-inline-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

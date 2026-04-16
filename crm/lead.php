@@ -21,6 +21,7 @@ if ($id<=0) { header('Location: '.CRM_BASE_URL.'/index.php'); exit; }
         <div class="bn">HostUp <span>CRM</span></div>
       </div>
       <div class="right">
+        <a class="btn" href="<?= CRM_BASE_URL ?>/channel/index.php">Channel</a>
         <a class="btn" href="<?= CRM_BASE_URL ?>/index.php">← Pipeline</a>
         <a class="btn" href="<?= CRM_BASE_URL ?>/logout.php">Esci</a>
       </div>
