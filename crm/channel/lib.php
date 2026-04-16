@@ -161,15 +161,17 @@ function cm_store_uploaded_media(array $file, int $propertyId, array $extensions
   }
 
   $directory = cm_property_media_dir($propertyId);
-  if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+  if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
     throw new RuntimeException('Impossibile creare la cartella media dell\'immobile.');
   }
+  @chmod($directory, 0755);
 
   $filename = date('YmdHis') . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
   $destination = $directory . DIRECTORY_SEPARATOR . $filename;
   if (!move_uploaded_file($tmpName, $destination)) {
     throw new RuntimeException('Salvataggio immagine fallito.');
   }
+  @chmod($destination, 0644);
 
   return cm_property_media_url($propertyId, $filename);
 }
