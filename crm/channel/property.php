@@ -131,6 +131,52 @@ $icalUrl = cm_ical_export_url($property);
           <label>Descrizione</label>
           <textarea name="description" class="textarea"><?= cm_h($property['description'] ?? '') ?></textarea>
 
+          <div class="cm-section-label">Contenuti pagina pubblica</div>
+          <label>Immagine principale</label>
+          <input name="hero_image_url" value="<?= cm_h($property['hero_image_url'] ?? '') ?>" placeholder="https://..." />
+
+          <label>Galleria immagini</label>
+          <textarea name="gallery_images" class="textarea" placeholder="Una URL per riga"><?= cm_h($property['gallery_images'] ?? '') ?></textarea>
+
+          <div class="cm-form-split">
+            <div>
+              <label>Highlights pubblici</label>
+              <textarea name="public_highlights" class="textarea" placeholder="Una riga per punto forte"><?= cm_h($property['public_highlights'] ?? '') ?></textarea>
+            </div>
+            <div>
+              <label>Servizi / amenities</label>
+              <textarea name="amenities" class="textarea" placeholder="Una riga per servizio"><?= cm_h($property['amenities'] ?? '') ?></textarea>
+            </div>
+          </div>
+
+          <label>Indicazioni arrivo / accesso</label>
+          <textarea name="arrival_instructions" class="textarea" placeholder="Parcheggio, punto d'incontro, citofono, self check-in..."><?= cm_h($property['arrival_instructions'] ?? '') ?></textarea>
+
+          <div class="cm-form-split">
+            <div>
+              <label>Istruzioni check-in</label>
+              <textarea name="checkin_instructions" class="textarea" placeholder="Documenti richiesti, fascia oraria, contatto di riferimento..."><?= cm_h($property['checkin_instructions'] ?? '') ?></textarea>
+            </div>
+            <div>
+              <label>Istruzioni check-out</label>
+              <textarea name="checkout_instructions" class="textarea" placeholder="Orario, chiavi, raccolta differenziata, ultime verifiche..."><?= cm_h($property['checkout_instructions'] ?? '') ?></textarea>
+            </div>
+          </div>
+
+          <label>Regole della casa</label>
+          <textarea name="house_rules" class="textarea" placeholder="Silenzio, animali, feste, fumo, ospiti extra..."><?= cm_h($property['house_rules'] ?? '') ?></textarea>
+
+          <div class="cm-form-split">
+            <div>
+              <label>Contatto soggiorno</label>
+              <input name="contact_name" value="<?= cm_h($property['contact_name'] ?? '') ?>" placeholder="Nome host / concierge" />
+            </div>
+            <div>
+              <label>Telefono soggiorno</label>
+              <input name="contact_phone" value="<?= cm_h($property['contact_phone'] ?? '') ?>" placeholder="+39..." />
+            </div>
+          </div>
+
           <div class="cm-form-split">
             <div>
               <label>Indirizzo</label>

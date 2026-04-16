@@ -19,6 +19,9 @@ $success = '';
 $error = '';
 $quote = null;
 $isAvailable = false;
+$galleryImages = $property ? cm_gallery_images($property) : [];
+$highlights = $property ? cm_lines($property['public_highlights'] ?? null) : [];
+$amenities = $property ? cm_lines($property['amenities'] ?? null) : [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'create_booking') {
   try {
@@ -96,6 +99,19 @@ $properties = $property ? [] : cm_public_properties([
     <?php endif; ?>
 
     <?php if ($property): ?>
+      <?php if ($galleryImages): ?>
+        <section class="box cm-panel cm-hero-media">
+          <img src="<?= cm_h($galleryImages[0]) ?>" alt="<?= cm_h($property['name']) ?>">
+          <?php if (count($galleryImages) > 1): ?>
+            <div class="cm-gallery-strip">
+              <?php foreach (array_slice($galleryImages, 1, 4) as $image): ?>
+                <img src="<?= cm_h($image) ?>" alt="<?= cm_h($property['name']) ?>">
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </section>
+      <?php endif; ?>
+
       <section class="cm-grid">
         <article class="box cm-panel">
           <div class="boxTitle">Dettagli soggiorno</div>
@@ -107,6 +123,24 @@ $properties = $property ? [] : cm_public_properties([
           <div class="cm-kv"><strong>Check-in:</strong> <?= cm_h(substr((string)$property['checkin_from'], 0, 5)) ?> - <?= cm_h(substr((string)$property['checkin_until'], 0, 5)) ?></div>
           <div class="cm-kv"><strong>Check-out:</strong> entro <?= cm_h(substr((string)$property['checkout_until'], 0, 5)) ?></div>
           <div class="cm-kv"><strong>Prezzo base:</strong> <?= cm_h(cm_fmt_money((float)$property['base_price'], (string)$property['currency'])) ?></div>
+
+          <?php if ($highlights): ?>
+            <div class="cm-subtitle">Punti forti</div>
+            <ul class="cm-list">
+              <?php foreach ($highlights as $item): ?>
+                <li><?= cm_h($item) ?></li>
+              <?php endforeach; ?>
+            </ul>
+          <?php endif; ?>
+
+          <?php if ($amenities): ?>
+            <div class="cm-subtitle">Servizi inclusi</div>
+            <ul class="cm-list">
+              <?php foreach ($amenities as $item): ?>
+                <li><?= cm_h($item) ?></li>
+              <?php endforeach; ?>
+            </ul>
+          <?php endif; ?>
 
           <form method="get" class="cm-form" style="margin-top:14px;">
             <input type="hidden" name="property" value="<?= cm_h($property['slug']) ?>">
@@ -185,6 +219,61 @@ $properties = $property ? [] : cm_public_properties([
           </form>
         </article>
       </section>
+
+      <?php if ($property['arrival_instructions'] || $property['checkin_instructions'] || $property['checkout_instructions'] || $property['house_rules'] || $property['contact_name'] || $property['contact_phone'] || count($galleryImages) > 1): ?>
+        <section class="cm-info-grid">
+          <?php if ($property['arrival_instructions']): ?>
+            <article class="box cm-panel">
+              <div class="boxTitle">Come arrivare</div>
+              <div class="cm-richtext"><?= nl2br(cm_h((string)$property['arrival_instructions'])) ?></div>
+            </article>
+          <?php endif; ?>
+
+          <?php if ($property['checkin_instructions']): ?>
+            <article class="box cm-panel">
+              <div class="boxTitle">Istruzioni check-in</div>
+              <div class="cm-richtext"><?= nl2br(cm_h((string)$property['checkin_instructions'])) ?></div>
+            </article>
+          <?php endif; ?>
+
+          <?php if ($property['checkout_instructions']): ?>
+            <article class="box cm-panel">
+              <div class="boxTitle">Istruzioni check-out</div>
+              <div class="cm-richtext"><?= nl2br(cm_h((string)$property['checkout_instructions'])) ?></div>
+            </article>
+          <?php endif; ?>
+
+          <?php if ($property['house_rules']): ?>
+            <article class="box cm-panel">
+              <div class="boxTitle">Regole della casa</div>
+              <div class="cm-richtext"><?= nl2br(cm_h((string)$property['house_rules'])) ?></div>
+            </article>
+          <?php endif; ?>
+
+          <?php if ($property['contact_name'] || $property['contact_phone']): ?>
+            <article class="box cm-panel">
+              <div class="boxTitle">Contatto soggiorno</div>
+              <?php if ($property['contact_name']): ?>
+                <div class="cm-kv"><strong>Referente:</strong> <?= cm_h($property['contact_name']) ?></div>
+              <?php endif; ?>
+              <?php if ($property['contact_phone']): ?>
+                <div class="cm-kv"><strong>Telefono:</strong> <a href="tel:<?= cm_h($property['contact_phone']) ?>"><?= cm_h($property['contact_phone']) ?></a></div>
+              <?php endif; ?>
+            </article>
+          <?php endif; ?>
+
+          <?php if (count($galleryImages) > 1): ?>
+            <article class="box cm-panel cm-gallery-card">
+              <div class="boxTitle">Galleria</div>
+              <div class="cm-gallery-grid">
+                <?php foreach ($galleryImages as $image): ?>
+                  <img src="<?= cm_h($image) ?>" alt="<?= cm_h($property['name']) ?>">
+                <?php endforeach; ?>
+              </div>
+            </article>
+          <?php endif; ?>
+        </section>
+      <?php endif; ?>
     <?php else: ?>
       <section class="box cm-panel">
         <div class="boxTitle">Trova disponibilità</div>
@@ -212,6 +301,10 @@ $properties = $property ? [] : cm_public_properties([
       <section class="cm-property-list">
         <?php foreach ($properties as $row): ?>
           <article class="box cm-panel cm-public-card">
+            <?php $cardImage = cm_primary_image($row); ?>
+            <?php if ($cardImage): ?>
+              <img class="cm-public-thumb" src="<?= cm_h($cardImage) ?>" alt="<?= cm_h($row['name']) ?>">
+            <?php endif; ?>
             <div class="boxTitle"><?= cm_h($row['name']) ?></div>
             <div class="cm-kv"><strong>Località:</strong> <?= cm_h(trim(($row['city'] ?: '') . ' ' . ($row['region'] ?: ''))) ?></div>
             <div class="cm-kv"><strong>Capienza:</strong> <?= (int)$row['max_guests'] ?> ospiti</div>

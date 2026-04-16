@@ -45,6 +45,46 @@ function cm_excerpt(string $value, int $width = 180): string {
   return substr($value, 0, max(0, $width - 3)) . '...';
 }
 
+function cm_textarea_value(mixed $value): ?string {
+  $value = trim((string)$value);
+  if ($value === '') {
+    return null;
+  }
+  $value = str_replace("\r\n", "\n", $value);
+  $value = str_replace("\r", "\n", $value);
+  return $value;
+}
+
+function cm_lines(?string $value): array {
+  if ($value === null || trim($value) === '') {
+    return [];
+  }
+
+  $items = preg_split('/\r?\n+/', $value) ?: [];
+  $items = array_map(static fn(string $item): string => trim($item), $items);
+  return array_values(array_filter($items, static fn(string $item): bool => $item !== ''));
+}
+
+function cm_primary_image(array $property): ?string {
+  $hero = trim((string)($property['hero_image_url'] ?? ''));
+  if ($hero !== '') {
+    return $hero;
+  }
+
+  $images = cm_lines($property['gallery_images'] ?? null);
+  return $images[0] ?? null;
+}
+
+function cm_gallery_images(array $property): array {
+  $images = cm_lines($property['gallery_images'] ?? null);
+  $hero = trim((string)($property['hero_image_url'] ?? ''));
+  if ($hero !== '') {
+    array_unshift($images, $hero);
+  }
+  $images = array_values(array_unique(array_filter($images, static fn(string $item): bool => $item !== '')));
+  return $images;
+}
+
 function cm_channels(): array {
   return [
     'direct' => 'Direct',
@@ -109,7 +149,41 @@ function cm_install_schema(): void {
     db()->exec($statement);
   }
 
+  cm_ensure_channel_schema_upgrades();
+
   $installed = true;
+}
+
+function cm_table_has_column(string $table, string $column): bool {
+  $st = db()->prepare(
+    'SELECT COUNT(*)
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = ?
+       AND COLUMN_NAME = ?'
+  );
+  $st->execute([$table, $column]);
+  return (int)$st->fetchColumn() > 0;
+}
+
+function cm_ensure_column(string $table, string $column, string $definition): void {
+  if (cm_table_has_column($table, $column)) {
+    return;
+  }
+  db()->exec("ALTER TABLE `{$table}` ADD COLUMN `{$column}` {$definition}");
+}
+
+function cm_ensure_channel_schema_upgrades(): void {
+  cm_ensure_column('cm_properties', 'hero_image_url', 'VARCHAR(255) DEFAULT NULL');
+  cm_ensure_column('cm_properties', 'gallery_images', 'TEXT DEFAULT NULL');
+  cm_ensure_column('cm_properties', 'public_highlights', 'TEXT DEFAULT NULL');
+  cm_ensure_column('cm_properties', 'amenities', 'TEXT DEFAULT NULL');
+  cm_ensure_column('cm_properties', 'arrival_instructions', 'TEXT DEFAULT NULL');
+  cm_ensure_column('cm_properties', 'checkin_instructions', 'TEXT DEFAULT NULL');
+  cm_ensure_column('cm_properties', 'checkout_instructions', 'TEXT DEFAULT NULL');
+  cm_ensure_column('cm_properties', 'house_rules', 'TEXT DEFAULT NULL');
+  cm_ensure_column('cm_properties', 'contact_name', 'VARCHAR(160) DEFAULT NULL');
+  cm_ensure_column('cm_properties', 'contact_phone', 'VARCHAR(60) DEFAULT NULL');
 }
 
 function cm_slugify(string $value): string {
@@ -393,6 +467,16 @@ function cm_save_property(array $input): int {
     $name,
     $slug,
     trim((string)($input['description'] ?? '')) ?: null,
+    trim((string)($input['hero_image_url'] ?? '')) ?: null,
+    cm_textarea_value($input['gallery_images'] ?? null),
+    cm_textarea_value($input['public_highlights'] ?? null),
+    cm_textarea_value($input['amenities'] ?? null),
+    cm_textarea_value($input['arrival_instructions'] ?? null),
+    cm_textarea_value($input['checkin_instructions'] ?? null),
+    cm_textarea_value($input['checkout_instructions'] ?? null),
+    cm_textarea_value($input['house_rules'] ?? null),
+    trim((string)($input['contact_name'] ?? '')) ?: null,
+    trim((string)($input['contact_phone'] ?? '')) ?: null,
     trim((string)($input['address_line1'] ?? '')) ?: null,
     trim((string)($input['city'] ?? '')) ?: null,
     trim((string)($input['region'] ?? '')) ?: null,
@@ -418,10 +502,13 @@ function cm_save_property(array $input): int {
     $payload[] = $id;
     db()->prepare(
       'UPDATE cm_properties
-       SET client_id = ?, name = ?, slug = ?, description = ?, address_line1 = ?, city = ?, region = ?,
-           country_code = ?, timezone_name = ?, bedrooms = ?, bathrooms = ?, beds = ?, max_guests = ?,
-           min_nights = ?, checkin_from = ?, checkin_until = ?, checkout_until = ?, base_price = ?,
-           cleaning_fee = ?, currency = ?, booking_notice_hours = ?, direct_booking_enabled = ?, published = ?
+       SET client_id = ?, name = ?, slug = ?, description = ?, hero_image_url = ?, gallery_images = ?,
+           public_highlights = ?, amenities = ?, arrival_instructions = ?, checkin_instructions = ?,
+           checkout_instructions = ?, house_rules = ?, contact_name = ?, contact_phone = ?, address_line1 = ?,
+           city = ?, region = ?, country_code = ?, timezone_name = ?, bedrooms = ?, bathrooms = ?, beds = ?,
+           max_guests = ?, min_nights = ?, checkin_from = ?, checkin_until = ?, checkout_until = ?,
+           base_price = ?, cleaning_fee = ?, currency = ?, booking_notice_hours = ?, direct_booking_enabled = ?,
+           published = ?
        WHERE id = ?'
     )->execute($payload);
     return $id;
@@ -431,11 +518,13 @@ function cm_save_property(array $input): int {
   $payload[] = $token;
   db()->prepare(
     'INSERT INTO cm_properties (
-        client_id, name, slug, description, address_line1, city, region, country_code, timezone_name,
-        bedrooms, bathrooms, beds, max_guests, min_nights, checkin_from, checkin_until, checkout_until,
-        base_price, cleaning_fee, currency, booking_notice_hours, direct_booking_enabled, published, ical_export_token
+        client_id, name, slug, description, hero_image_url, gallery_images, public_highlights, amenities,
+        arrival_instructions, checkin_instructions, checkout_instructions, house_rules, contact_name, contact_phone,
+        address_line1, city, region, country_code, timezone_name, bedrooms, bathrooms, beds, max_guests,
+        min_nights, checkin_from, checkin_until, checkout_until, base_price, cleaning_fee, currency,
+        booking_notice_hours, direct_booking_enabled, published, ical_export_token
      ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
      )'
   )->execute($payload);
 
