@@ -21,6 +21,112 @@ function cm_booking_monogram(string $name): string {
   return $letters !== '' ? $letters : 'ST';
 }
 
+function cm_render_public_booking_widget(array $property, ?array $quote, bool $isAvailable, string $checkin, string $checkout, int $guests): void {
+  ?>
+  <div class="cm-public-booking-widget">
+    <div class="cm-public-booking-flow">
+      <div class="cm-public-booking-step">
+        <span>1</span>
+        <div>
+          <strong>Date</strong>
+          <small>Controlla disponibilita e costo</small>
+        </div>
+      </div>
+      <div class="cm-public-booking-step">
+        <span>2</span>
+        <div>
+          <strong>Richiesta</strong>
+          <small>Inserisci i tuoi dati e invia</small>
+        </div>
+      </div>
+    </div>
+
+    <form method="get" class="cm-form cm-public-check-form">
+      <input type="hidden" name="property" value="<?= cm_h($property['slug']) ?>">
+      <div class="cm-public-booking-grid cm-public-booking-grid--dates">
+        <div>
+          <label>Check-in</label>
+          <input type="date" name="checkin" value="<?= cm_h($checkin) ?>" required />
+        </div>
+        <div>
+          <label>Check-out</label>
+          <input type="date" name="checkout" value="<?= cm_h($checkout) ?>" required />
+        </div>
+      </div>
+
+      <div class="cm-public-booking-grid">
+        <div>
+          <label>Ospiti</label>
+          <input type="number" name="guests" min="1" max="<?= (int)$property['max_guests'] ?>" value="<?= cm_h($guests) ?>" />
+        </div>
+      </div>
+
+      <button class="btn-primary cm-public-submit" type="submit">Verifica disponibilita</button>
+    </form>
+
+    <?php if ($quote): ?>
+      <div class="cm-quote">
+        <div><strong><?= (int)$quote['nights'] ?></strong> notti</div>
+        <div><?= cm_h(cm_fmt_money((float)$quote['nightly_rate'], (string)$quote['currency'])) ?> / notte</div>
+        <div>Pulizie: <?= cm_h(cm_fmt_money((float)$quote['cleaning_fee'], (string)$quote['currency'])) ?></div>
+        <div class="cm-quote-total">Totale stimato: <?= cm_h(cm_fmt_money((float)$quote['total'], (string)$quote['currency'])) ?></div>
+      </div>
+    <?php endif; ?>
+
+    <?php if ($checkin && $checkout): ?>
+      <div class="cm-booking-state <?= $isAvailable ? 'free' : 'busy' ?>">
+        <?= $isAvailable ? 'Disponibile per le date selezionate' : 'Non disponibile per le date selezionate' ?>
+      </div>
+    <?php else: ?>
+      <div class="cm-booking-state free">Seleziona prima le date per attivare la richiesta.</div>
+    <?php endif; ?>
+
+    <form method="post" class="cm-form cm-public-request-form">
+      <input type="hidden" name="action" value="create_booking">
+      <input type="hidden" name="property_slug" value="<?= cm_h($property['slug']) ?>">
+      <input type="hidden" name="property_id" value="<?= (int)$property['id'] ?>">
+      <input type="hidden" name="checkin_date" value="<?= cm_h($checkin) ?>">
+      <input type="hidden" name="checkout_date" value="<?= cm_h($checkout) ?>">
+
+      <div class="cm-public-booking-grid cm-public-booking-grid--split">
+        <div>
+          <label>Nome e cognome</label>
+          <input name="guest_name" required />
+        </div>
+        <div>
+          <label>Email</label>
+          <input name="guest_email" type="email" required />
+        </div>
+      </div>
+
+      <div class="cm-public-booking-grid cm-public-booking-grid--three">
+        <div>
+          <label>Telefono</label>
+          <input name="guest_phone" />
+        </div>
+        <div>
+          <label>Adulti</label>
+          <input name="adults" type="number" min="1" max="<?= (int)$property['max_guests'] ?>" value="<?= cm_h(max(1, $guests)) ?>" />
+        </div>
+        <div>
+          <label>Bambini</label>
+          <input name="children" type="number" min="0" value="0" />
+        </div>
+      </div>
+
+      <div class="cm-public-booking-grid">
+        <div>
+          <label>Note</label>
+          <textarea name="guest_notes" class="textarea" placeholder="Orario di arrivo, richieste particolari, note utili..."></textarea>
+        </div>
+      </div>
+
+      <button class="btn-primary cm-public-submit" type="submit"<?= (!$checkin || !$checkout || !$isAvailable) ? ' disabled' : '' ?>>Invia richiesta</button>
+    </form>
+  </div>
+  <?php
+}
+
 $propertySlug = trim((string)($_GET['property'] ?? $_POST['property_slug'] ?? ''));
 $checkin = trim((string)($_GET['checkin'] ?? $_POST['checkin_date'] ?? ''));
 $checkout = trim((string)($_GET['checkout'] ?? $_POST['checkout_date'] ?? ''));
@@ -81,6 +187,11 @@ $properties = $property ? [] : cm_public_properties([
 $pageTitle = $property ? cm_h($property['name']) . ' | Prenota direttamente' : 'Prenotazione diretta';
 $locationLabel = $property ? trim((string)($property['city'] ?? '') . ' ' . (($property['region'] ?? '') !== '' ? '(' . (string)$property['region'] . ')' : '')) : '';
 $description = $property ? trim((string)($property['description'] ?? '')) : '';
+$mobileBookingLabel = $property ? ($quote ? 'Completa richiesta' : 'Apri form') : '';
+$mobileBookingMeta = $property
+  ? ($checkin && $checkout ? ($isAvailable ? 'Disponibile per le date scelte' : 'Date non disponibili') : 'Verifica disponibilita e invia la richiesta')
+  : '';
+$mobileDrawerInitiallyOpen = $property && $error !== '';
 ?>
 <!doctype html>
 <html lang="it">
@@ -127,10 +238,6 @@ $description = $property ? trim((string)($property['description'] ?? '')) : '';
         <div class="cm-public-hero-media">
           <?php if ($heroImage): ?>
             <img src="<?= cm_h($heroImage) ?>" alt="<?= cm_h($property['name']) ?>">
-          <?php elseif ($logoUrl): ?>
-            <div class="cm-public-media-fallback">
-              <img class="cm-public-media-fallback-logo" src="<?= cm_h($logoUrl) ?>" alt="<?= cm_h($property['name']) ?>">
-            </div>
           <?php else: ?>
             <div class="cm-public-media-fallback">
               <span><?= cm_h(cm_booking_monogram($property['name'])) ?></span>
@@ -330,7 +437,7 @@ $description = $property ? trim((string)($property['description'] ?? '')) : '';
         </div>
 
         <aside class="cm-public-sidebar">
-          <div class="cm-public-panel cm-public-panel--sticky">
+          <div class="cm-public-panel cm-public-panel--sticky" id="booking-panel">
             <div class="cm-public-section-head">
               <div>
                 <div class="cm-public-overline">Disponibilita</div>
@@ -338,80 +445,33 @@ $description = $property ? trim((string)($property['description'] ?? '')) : '';
               </div>
             </div>
 
-            <form method="get" class="cm-form">
-              <input type="hidden" name="property" value="<?= cm_h($property['slug']) ?>">
-              <div class="cm-form-grid4">
-                <div>
-                  <label>Check-in</label>
-                  <input type="date" name="checkin" value="<?= cm_h($checkin) ?>" required />
-                </div>
-                <div>
-                  <label>Check-out</label>
-                  <input type="date" name="checkout" value="<?= cm_h($checkout) ?>" required />
-                </div>
-                <div>
-                  <label>Ospiti</label>
-                  <input type="number" name="guests" min="1" max="<?= (int)$property['max_guests'] ?>" value="<?= cm_h($guests) ?>" />
-                </div>
-                <div class="cm-form-submit">
-                  <button class="btn-primary" type="submit">Controlla</button>
-                </div>
-              </div>
-            </form>
-
-            <?php if ($quote): ?>
-              <div class="cm-quote">
-                <div><strong><?= (int)$quote['nights'] ?></strong> notti</div>
-                <div><?= cm_h(cm_fmt_money((float)$quote['nightly_rate'], (string)$quote['currency'])) ?> / notte</div>
-                <div>Pulizie: <?= cm_h(cm_fmt_money((float)$quote['cleaning_fee'], (string)$quote['currency'])) ?></div>
-                <div class="cm-quote-total">Totale stimato: <?= cm_h(cm_fmt_money((float)$quote['total'], (string)$quote['currency'])) ?></div>
-              </div>
-            <?php endif; ?>
-
-            <?php if ($checkin && $checkout): ?>
-              <div class="cm-booking-state <?= $isAvailable ? 'free' : 'busy' ?>">
-                <?= $isAvailable ? 'Disponibile per le date selezionate' : 'Non disponibile per le date selezionate' ?>
-              </div>
-            <?php else: ?>
-              <div class="cm-booking-state free">Seleziona le date per verificare disponibilita e costo.</div>
-            <?php endif; ?>
-
-            <form method="post" class="cm-form">
-              <input type="hidden" name="action" value="create_booking">
-              <input type="hidden" name="property_slug" value="<?= cm_h($property['slug']) ?>">
-              <input type="hidden" name="property_id" value="<?= (int)$property['id'] ?>">
-              <input type="hidden" name="checkin_date" value="<?= cm_h($checkin) ?>">
-              <input type="hidden" name="checkout_date" value="<?= cm_h($checkout) ?>">
-              <div class="cm-form-split">
-                <div>
-                  <label>Nome e cognome</label>
-                  <input name="guest_name" required />
-                </div>
-                <div>
-                  <label>Email</label>
-                  <input name="guest_email" type="email" required />
-                </div>
-              </div>
-              <div class="cm-form-third">
-                <div>
-                  <label>Telefono</label>
-                  <input name="guest_phone" />
-                </div>
-                <div>
-                  <label>Adulti</label>
-                  <input name="adults" type="number" min="1" max="<?= (int)$property['max_guests'] ?>" value="<?= cm_h(max(1, $guests)) ?>" />
-                </div>
-                <div>
-                  <label>Bambini</label>
-                  <input name="children" type="number" min="0" value="0" />
-                </div>
-              </div>
-              <label>Note</label>
-              <textarea name="guest_notes" class="textarea" placeholder="Orario di arrivo, richieste particolari, note utili..."></textarea>
-              <button class="btn-primary" type="submit"<?= (!$checkin || !$checkout || !$isAvailable) ? ' disabled' : '' ?>>Invia richiesta</button>
-            </form>
+            <?php cm_render_public_booking_widget($property, $quote, $isAvailable, $checkin, $checkout, $guests); ?>
           </div>
         </aside>
+      </section>
+
+      <div class="cm-mobile-booking-bar">
+        <div class="cm-mobile-booking-bar-copy">
+          <strong><?= cm_h(cm_fmt_money((float)$property['base_price'], (string)$property['currency'])) ?></strong>
+          <span><?= cm_h($mobileBookingMeta) ?></span>
+        </div>
+        <button class="btn-primary" type="button" data-booking-toggle aria-controls="mobile-booking-drawer" aria-expanded="<?= $mobileDrawerInitiallyOpen ? 'true' : 'false' ?>">
+          <?= cm_h($mobileBookingLabel) ?>
+        </button>
+      </div>
+
+      <div class="cm-mobile-booking-overlay<?= $mobileDrawerInitiallyOpen ? ' is-open' : '' ?>" data-booking-overlay></div>
+      <section class="cm-mobile-booking-drawer<?= $mobileDrawerInitiallyOpen ? ' is-open' : '' ?>" id="mobile-booking-drawer" aria-hidden="<?= $mobileDrawerInitiallyOpen ? 'false' : 'true' ?>">
+        <div class="cm-mobile-booking-drawer-handle"></div>
+        <div class="cm-mobile-booking-drawer-head">
+          <div>
+            <div class="cm-public-overline">Richiesta diretta</div>
+            <h2><?= cm_h($property['name']) ?></h2>
+          </div>
+          <button class="btn" type="button" data-booking-close>Chiudi</button>
+        </div>
+
+        <?php cm_render_public_booking_widget($property, $quote, $isAvailable, $checkin, $checkout, $guests); ?>
       </section>
     <?php else: ?>
       <section class="cm-public-listing-hero">
@@ -452,7 +512,6 @@ $description = $property ? trim((string)($property['description'] ?? '')) : '';
         <?php foreach ($properties as $row): ?>
           <?php
           $cardImage = cm_primary_image($row);
-          $cardLogo = cm_property_logo($row);
           $cardVideos = cm_property_videos($row);
           $cardLocation = trim((string)($row['city'] ?? '') . ' ' . (($row['region'] ?? '') !== '' ? '(' . (string)$row['region'] . ')' : ''));
           ?>
@@ -464,9 +523,6 @@ $description = $property ? trim((string)($property['description'] ?? '')) : '';
                 <div class="cm-public-media-fallback">
                   <span><?= cm_h(cm_booking_monogram((string)$row['name'])) ?></span>
                 </div>
-              <?php endif; ?>
-              <?php if ($cardLogo): ?>
-                <img class="cm-public-card-logo" src="<?= cm_h($cardLogo) ?>" alt="<?= cm_h($row['name']) ?>">
               <?php endif; ?>
             </div>
 
@@ -512,5 +568,46 @@ $description = $property ? trim((string)($property['description'] ?? '')) : '';
       </section>
     <?php endif; ?>
   </main>
+
+  <?php if ($property): ?>
+    <script>
+      (() => {
+        const drawer = document.getElementById('mobile-booking-drawer');
+        const overlay = document.querySelector('[data-booking-overlay]');
+        const openButtons = document.querySelectorAll('[data-booking-toggle]');
+        const closeButtons = document.querySelectorAll('[data-booking-close]');
+        if (!drawer || !overlay || openButtons.length === 0) {
+          return;
+        }
+
+        const setOpen = (open) => {
+          drawer.classList.toggle('is-open', open);
+          overlay.classList.toggle('is-open', open);
+          drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+          document.body.classList.toggle('cm-booking-drawer-open', open);
+          openButtons.forEach((button) => button.setAttribute('aria-expanded', open ? 'true' : 'false'));
+        };
+
+        openButtons.forEach((button) => {
+          button.addEventListener('click', () => setOpen(true));
+        });
+
+        closeButtons.forEach((button) => {
+          button.addEventListener('click', () => setOpen(false));
+        });
+
+        overlay.addEventListener('click', () => setOpen(false));
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            setOpen(false);
+          }
+        });
+
+        <?php if ($mobileDrawerInitiallyOpen): ?>
+        setOpen(true);
+        <?php endif; ?>
+      })();
+    </script>
+  <?php endif; ?>
 </body>
 </html>

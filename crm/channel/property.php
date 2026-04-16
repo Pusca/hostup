@@ -181,17 +181,6 @@ $heroPreview = cm_primary_image($property);
 
             <div class="cm-section-label">Media e pagina pubblica</div>
 
-            <label>Logo immobile</label>
-            <input name="logo_image_url" value="<?= cm_h($property['logo_image_url'] ?? '') ?>" placeholder="https://..." />
-            <label>Carica logo immobile</label>
-            <input type="file" name="logo_image_file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" />
-            <?php if ($logoPreview): ?>
-              <div class="cm-current-media cm-current-media--logo">
-                <img src="<?= cm_h($logoPreview) ?>" alt="<?= cm_h($property['name']) ?>">
-                <label class="cm-check"><input type="checkbox" name="remove_logo_image" value="1"> Rimuovi logo attuale</label>
-              </div>
-            <?php endif; ?>
-
             <label>Immagine principale</label>
             <input name="hero_image_url" value="<?= cm_h($property['hero_image_url'] ?? '') ?>" placeholder="https://..." />
             <label>Carica immagine principale</label>
@@ -216,6 +205,17 @@ $heroPreview = cm_primary_image($property);
                     <input type="checkbox" name="remove_gallery_images[]" value="<?= cm_h($image) ?>">
                   </label>
                 <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+
+            <label>Logo header</label>
+            <input name="logo_image_url" value="<?= cm_h($property['logo_image_url'] ?? '') ?>" placeholder="https://..." />
+            <label>Carica logo header</label>
+            <input type="file" name="logo_image_file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" />
+            <?php if ($logoPreview): ?>
+              <div class="cm-current-media cm-current-media--logo">
+                <img src="<?= cm_h($logoPreview) ?>" alt="<?= cm_h($property['name']) ?>">
+                <label class="cm-check"><input type="checkbox" name="remove_logo_image" value="1"> Rimuovi logo attuale</label>
               </div>
             <?php endif; ?>
 
