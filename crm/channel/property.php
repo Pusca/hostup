@@ -63,7 +63,9 @@ $channelOptions = cm_channels();
 $clients = cm_clients();
 $directUrl = cm_direct_booking_url($property);
 $icalUrl = cm_ical_export_url($property);
+$logoPreview = cm_property_logo($property);
 $galleryImages = cm_lines($property['gallery_images'] ?? null);
+$videoUrls = cm_property_videos($property);
 $heroPreview = cm_primary_image($property);
 ?>
 <!doctype html>
@@ -108,10 +110,19 @@ $heroPreview = cm_primary_image($property);
       </div>
     </section>
 
-    <?php if ($heroPreview): ?>
+    <?php if ($heroPreview || $logoPreview): ?>
       <section class="cm-property-banner box cm-panel">
-        <img src="<?= cm_h($heroPreview) ?>" alt="<?= cm_h($property['name']) ?>">
+        <?php if ($heroPreview): ?>
+          <img src="<?= cm_h($heroPreview) ?>" alt="<?= cm_h($property['name']) ?>">
+        <?php else: ?>
+          <div class="cm-property-banner-fallback">
+            <span><?= cm_h(substr(cm_slugify((string)$property['name']), 0, 2)) ?></span>
+          </div>
+        <?php endif; ?>
         <div class="cm-property-banner-copy">
+          <?php if ($logoPreview): ?>
+            <img class="cm-property-brand-mark" src="<?= cm_h($logoPreview) ?>" alt="<?= cm_h($property['name']) ?>">
+          <?php endif; ?>
           <div class="cm-eyebrow">Anteprima pubblica</div>
           <h2><?= cm_h($property['name']) ?></h2>
           <p>Controlla dati operativi, contenuti media, calendario unico, canali collegati e stato delle prenotazioni da un'unica pagina.</p>
@@ -170,6 +181,17 @@ $heroPreview = cm_primary_image($property);
 
             <div class="cm-section-label">Media e pagina pubblica</div>
 
+            <label>Logo immobile</label>
+            <input name="logo_image_url" value="<?= cm_h($property['logo_image_url'] ?? '') ?>" placeholder="https://..." />
+            <label>Carica logo immobile</label>
+            <input type="file" name="logo_image_file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" />
+            <?php if ($logoPreview): ?>
+              <div class="cm-current-media cm-current-media--logo">
+                <img src="<?= cm_h($logoPreview) ?>" alt="<?= cm_h($property['name']) ?>">
+                <label class="cm-check"><input type="checkbox" name="remove_logo_image" value="1"> Rimuovi logo attuale</label>
+              </div>
+            <?php endif; ?>
+
             <label>Immagine principale</label>
             <input name="hero_image_url" value="<?= cm_h($property['hero_image_url'] ?? '') ?>" placeholder="https://..." />
             <label>Carica immagine principale</label>
@@ -192,6 +214,22 @@ $heroPreview = cm_primary_image($property);
                     <img src="<?= cm_h($image) ?>" alt="<?= cm_h($property['name']) ?>">
                     <span class="cm-muted">Rimuovi</span>
                     <input type="checkbox" name="remove_gallery_images[]" value="<?= cm_h($image) ?>">
+                  </label>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+
+            <label>Video pagina</label>
+            <textarea name="video_urls" class="textarea" placeholder="Una URL diretta a file video per riga (.mp4, .webm, .mov)"><?= cm_h($property['video_urls'] ?? '') ?></textarea>
+            <label>Carica video</label>
+            <input type="file" name="video_files[]" accept="video/mp4,video/webm,video/ogg,video/quicktime" multiple />
+            <?php if ($videoUrls): ?>
+              <div class="cm-existing-gallery cm-existing-gallery--videos">
+                <?php foreach ($videoUrls as $videoUrl): ?>
+                  <label class="cm-media-thumb cm-media-thumb--video">
+                    <video src="<?= cm_h($videoUrl) ?>" controls muted playsinline preload="metadata"></video>
+                    <span class="cm-muted">Rimuovi</span>
+                    <input type="checkbox" name="remove_video_urls[]" value="<?= cm_h($videoUrl) ?>">
                   </label>
                 <?php endforeach; ?>
               </div>

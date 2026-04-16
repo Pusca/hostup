@@ -85,6 +85,15 @@ function cm_gallery_images(array $property): array {
   return $images;
 }
 
+function cm_property_logo(array $property): ?string {
+  $logo = trim((string)($property['logo_image_url'] ?? ''));
+  return $logo !== '' ? $logo : null;
+}
+
+function cm_property_videos(array $property): array {
+  return cm_lines($property['video_urls'] ?? null);
+}
+
 function cm_project_root(): string {
   return dirname(__DIR__, 2);
 }
@@ -129,9 +138,9 @@ function cm_uploaded_file_list(array $spec): array {
   return $files;
 }
 
-function cm_store_uploaded_image(array $file, int $propertyId): string {
+function cm_store_uploaded_media(array $file, int $propertyId, array $extensions, int $maxSize, string $label): string {
   if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-    throw new RuntimeException('Upload immagine non riuscito.');
+    throw new RuntimeException('Upload ' . $label . ' non riuscito.');
   }
 
   $tmpName = (string)($file['tmp_name'] ?? '');
@@ -140,22 +149,15 @@ function cm_store_uploaded_image(array $file, int $propertyId): string {
   }
 
   $size = (int)($file['size'] ?? 0);
-  if ($size <= 0 || $size > 8 * 1024 * 1024) {
-    throw new RuntimeException('Ogni immagine deve essere inferiore a 8MB.');
+  if ($size <= 0 || $size > $maxSize) {
+    throw new RuntimeException('Il file ' . $label . ' supera la dimensione massima consentita.');
   }
 
   $finfo = new finfo(FILEINFO_MIME_TYPE);
   $mime = (string)$finfo->file($tmpName);
-  $extensions = [
-    'image/jpeg' => 'jpg',
-    'image/png' => 'png',
-    'image/webp' => 'webp',
-    'image/gif' => 'gif',
-  ];
-
   $extension = $extensions[$mime] ?? null;
   if ($extension === null) {
-    throw new RuntimeException('Formato immagine non supportato. Usa JPG, PNG, WEBP o GIF.');
+    throw new RuntimeException('Formato ' . $label . ' non supportato.');
   }
 
   $directory = cm_property_media_dir($propertyId);
@@ -170,6 +172,37 @@ function cm_store_uploaded_image(array $file, int $propertyId): string {
   }
 
   return cm_property_media_url($propertyId, $filename);
+}
+
+function cm_store_uploaded_image(array $file, int $propertyId): string {
+  return cm_store_uploaded_media(
+    $file,
+    $propertyId,
+    [
+      'image/jpeg' => 'jpg',
+      'image/png' => 'png',
+      'image/webp' => 'webp',
+      'image/gif' => 'gif',
+      'image/svg+xml' => 'svg',
+    ],
+    8 * 1024 * 1024,
+    'immagine'
+  );
+}
+
+function cm_store_uploaded_video(array $file, int $propertyId): string {
+  return cm_store_uploaded_media(
+    $file,
+    $propertyId,
+    [
+      'video/mp4' => 'mp4',
+      'video/webm' => 'webm',
+      'video/ogg' => 'ogv',
+      'video/quicktime' => 'mov',
+    ],
+    50 * 1024 * 1024,
+    'video'
+  );
 }
 
 function cm_gallery_without_removed(array $images, array $removeImages): array {
@@ -282,8 +315,10 @@ function cm_ensure_column(string $table, string $column, string $definition): vo
 }
 
 function cm_ensure_channel_schema_upgrades(): void {
+  cm_ensure_column('cm_properties', 'logo_image_url', 'VARCHAR(255) DEFAULT NULL');
   cm_ensure_column('cm_properties', 'hero_image_url', 'VARCHAR(255) DEFAULT NULL');
   cm_ensure_column('cm_properties', 'gallery_images', 'TEXT DEFAULT NULL');
+  cm_ensure_column('cm_properties', 'video_urls', 'TEXT DEFAULT NULL');
   cm_ensure_column('cm_properties', 'public_highlights', 'TEXT DEFAULT NULL');
   cm_ensure_column('cm_properties', 'amenities', 'TEXT DEFAULT NULL');
   cm_ensure_column('cm_properties', 'arrival_instructions', 'TEXT DEFAULT NULL');
@@ -570,14 +605,30 @@ function cm_save_property(array $input, array $files = []): int {
 
   $baseSlug = cm_slugify((string)($input['slug'] ?? $name));
   $slug = cm_unique_property_slug($baseSlug, $id);
+  $logoImageUrl = trim((string)($input['logo_image_url'] ?? ($existing['logo_image_url'] ?? '')));
   $heroImageUrl = trim((string)($input['hero_image_url'] ?? ($existing['hero_image_url'] ?? '')));
   $galleryImages = cm_lines($input['gallery_images'] ?? ($existing['gallery_images'] ?? null));
+  $videoUrls = cm_lines($input['video_urls'] ?? ($existing['video_urls'] ?? null));
+
+  if (!empty($input['remove_logo_image'])) {
+    $logoImageUrl = '';
+  }
 
   if (!empty($input['remove_hero_image'])) {
     $heroImageUrl = '';
   }
   if (!empty($input['remove_gallery_images']) && is_array($input['remove_gallery_images'])) {
     $galleryImages = cm_gallery_without_removed($galleryImages, $input['remove_gallery_images']);
+  }
+  if (!empty($input['remove_video_urls']) && is_array($input['remove_video_urls'])) {
+    $videoUrls = cm_gallery_without_removed($videoUrls, $input['remove_video_urls']);
+  }
+
+  if ($id > 0 && !empty($files['logo_image_file'])) {
+    $logoUpload = cm_uploaded_file_list($files['logo_image_file']);
+    if ($logoUpload !== []) {
+      $logoImageUrl = cm_store_uploaded_image($logoUpload[0], $id);
+    }
   }
 
   if ($id > 0 && !empty($files['hero_image_file'])) {
@@ -594,13 +645,22 @@ function cm_save_property(array $input, array $files = []): int {
     $galleryImages = array_values(array_unique(array_filter($galleryImages, static fn(string $item): bool => trim($item) !== '')));
   }
 
+  if ($id > 0 && !empty($files['video_files'])) {
+    foreach (cm_uploaded_file_list($files['video_files']) as $upload) {
+      $videoUrls[] = cm_store_uploaded_video($upload, $id);
+    }
+    $videoUrls = array_values(array_unique(array_filter($videoUrls, static fn(string $item): bool => trim($item) !== '')));
+  }
+
   $payload = [
     $clientId,
     $name,
     $slug,
     trim((string)($input['description'] ?? '')) ?: null,
+    $logoImageUrl !== '' ? $logoImageUrl : null,
     $heroImageUrl !== '' ? $heroImageUrl : null,
     !empty($galleryImages) ? implode("\n", $galleryImages) : null,
+    !empty($videoUrls) ? implode("\n", $videoUrls) : null,
     cm_textarea_value($input['public_highlights'] ?? null),
     cm_textarea_value($input['amenities'] ?? null),
     cm_textarea_value($input['arrival_instructions'] ?? null),
@@ -634,8 +694,8 @@ function cm_save_property(array $input, array $files = []): int {
     $payload[] = $id;
     db()->prepare(
       'UPDATE cm_properties
-       SET client_id = ?, name = ?, slug = ?, description = ?, hero_image_url = ?, gallery_images = ?,
-           public_highlights = ?, amenities = ?, arrival_instructions = ?, checkin_instructions = ?,
+       SET client_id = ?, name = ?, slug = ?, description = ?, logo_image_url = ?, hero_image_url = ?, gallery_images = ?,
+           video_urls = ?, public_highlights = ?, amenities = ?, arrival_instructions = ?, checkin_instructions = ?,
            checkout_instructions = ?, house_rules = ?, contact_name = ?, contact_phone = ?, address_line1 = ?,
            city = ?, region = ?, country_code = ?, timezone_name = ?, bedrooms = ?, bathrooms = ?, beds = ?,
            max_guests = ?, min_nights = ?, checkin_from = ?, checkin_until = ?, checkout_until = ?,
@@ -650,18 +710,18 @@ function cm_save_property(array $input, array $files = []): int {
   $payload[] = $token;
   db()->prepare(
     'INSERT INTO cm_properties (
-        client_id, name, slug, description, hero_image_url, gallery_images, public_highlights, amenities,
-        arrival_instructions, checkin_instructions, checkout_instructions, house_rules, contact_name, contact_phone,
-        address_line1, city, region, country_code, timezone_name, bedrooms, bathrooms, beds, max_guests,
-        min_nights, checkin_from, checkin_until, checkout_until, base_price, cleaning_fee, currency,
+        client_id, name, slug, description, logo_image_url, hero_image_url, gallery_images, video_urls,
+        public_highlights, amenities, arrival_instructions, checkin_instructions, checkout_instructions,
+        house_rules, contact_name, contact_phone, address_line1, city, region, country_code, timezone_name,
+        bedrooms, bathrooms, beds, max_guests, min_nights, checkin_from, checkin_until, checkout_until, base_price, cleaning_fee, currency,
         booking_notice_hours, direct_booking_enabled, published, ical_export_token
      ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
      )'
   )->execute($payload);
   $newId = (int)db()->lastInsertId();
 
-  if ($newId > 0 && (!empty($files['hero_image_file']) || !empty($files['gallery_image_files']))) {
+  if ($newId > 0 && (!empty($files['logo_image_file']) || !empty($files['hero_image_file']) || !empty($files['gallery_image_files']) || !empty($files['video_files']))) {
     $updateInput = $input;
     $updateInput['id'] = $newId;
     cm_save_property($updateInput, $files);

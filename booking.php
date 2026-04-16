@@ -5,6 +5,22 @@ require_once __DIR__ . '/crm/channel/lib.php';
 
 cm_install_schema();
 
+function cm_booking_monogram(string $name): string {
+  $parts = preg_split('/\s+/', trim($name)) ?: [];
+  $letters = '';
+  foreach ($parts as $part) {
+    $part = trim($part);
+    if ($part === '') {
+      continue;
+    }
+    $letters .= strtoupper(substr($part, 0, 1));
+    if (strlen($letters) >= 2) {
+      break;
+    }
+  }
+  return $letters !== '' ? $letters : 'ST';
+}
+
 $propertySlug = trim((string)($_GET['property'] ?? $_POST['property_slug'] ?? ''));
 $checkin = trim((string)($_GET['checkin'] ?? $_POST['checkin_date'] ?? ''));
 $checkout = trim((string)($_GET['checkout'] ?? $_POST['checkout_date'] ?? ''));
@@ -19,7 +35,10 @@ $success = '';
 $error = '';
 $quote = null;
 $isAvailable = false;
+$logoUrl = $property ? cm_property_logo($property) : null;
+$heroImage = $property ? cm_primary_image($property) : null;
 $galleryImages = $property ? cm_gallery_images($property) : [];
+$videoUrls = $property ? cm_property_videos($property) : [];
 $highlights = $property ? cm_lines($property['public_highlights'] ?? null) : [];
 $amenities = $property ? cm_lines($property['amenities'] ?? null) : [];
 
@@ -58,39 +77,44 @@ $properties = $property ? [] : cm_public_properties([
   'checkout' => $checkout,
   'guests' => $guests,
 ]);
+
+$pageTitle = $property ? cm_h($property['name']) . ' | Prenota direttamente' : 'Prenotazione diretta';
+$locationLabel = $property ? trim((string)($property['city'] ?? '') . ' ' . (($property['region'] ?? '') !== '' ? '(' . (string)$property['region'] . ')' : '')) : '';
+$description = $property ? trim((string)($property['description'] ?? '')) : '';
 ?>
 <!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title><?= $property ? cm_h($property['name']) . ' | Prenota' : 'Prenotazione diretta | HostUp' ?></title>
+  <title><?= $pageTitle ?></title>
   <link rel="stylesheet" href="<?= cm_h(CRM_BASE_URL) ?>/assets/crm.css">
   <link rel="stylesheet" href="<?= cm_h(CRM_BASE_URL) ?>/assets/channel.css">
 </head>
-<body class="crm-bg">
+<body class="crm-bg cm-booking">
   <header class="topbar">
     <div class="wrap">
-      <div class="brand">
-        <div class="badge"></div>
-        <div class="bn">HostUp <span>Booking</span></div>
-      </div>
-      <?php if ($property): ?>
-        <div class="right">
-          <a class="btn" href="/booking.php">Altri immobili</a>
+      <div class="cm-public-brand">
+        <?php if ($logoUrl): ?>
+          <img class="cm-public-brand-mark" src="<?= cm_h($logoUrl) ?>" alt="<?= cm_h($property ? $property['name'] : 'Prenotazione diretta') ?>">
+        <?php else: ?>
+          <div class="cm-public-wordmark"><?= cm_h(cm_booking_monogram($property['name'] ?? 'Stay')) ?></div>
+        <?php endif; ?>
+        <div class="cm-public-brand-copy">
+          <strong><?= cm_h($property['name'] ?? 'Prenotazione diretta') ?></strong>
+          <span><?= $property ? 'Sito diretto della struttura' : 'Collezione di soggiorni prenotabili direttamente' ?></span>
         </div>
-      <?php endif; ?>
+      </div>
+
+      <div class="right cm-public-nav">
+        <?php if ($property): ?>
+          <a class="btn" href="/booking.php">Altri soggiorni</a>
+        <?php endif; ?>
+      </div>
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="head">
-      <div>
-        <h1><?= $property ? cm_h($property['name']) : 'Prenotazione diretta' ?></h1>
-        <p><?= $property ? cm_h(trim(($property['city'] ?: '') . ' ' . ($property['region'] ?: ''))) : 'Ricerca disponibilità sul booking engine diretto integrato con il calendario unico.' ?></p>
-      </div>
-    </section>
-
+  <main class="wrap cm-public-shell">
     <?php if ($success): ?>
       <div class="cm-alert success"><?= cm_h($success) ?></div>
     <?php endif; ?>
@@ -99,184 +123,310 @@ $properties = $property ? [] : cm_public_properties([
     <?php endif; ?>
 
     <?php if ($property): ?>
-      <?php if ($galleryImages): ?>
-        <section class="box cm-panel cm-hero-media">
-          <img src="<?= cm_h($galleryImages[0]) ?>" alt="<?= cm_h($property['name']) ?>">
-          <?php if (count($galleryImages) > 1): ?>
-            <div class="cm-gallery-strip">
-              <?php foreach (array_slice($galleryImages, 1, 4) as $image): ?>
-                <img src="<?= cm_h($image) ?>" alt="<?= cm_h($property['name']) ?>">
-              <?php endforeach; ?>
-            </div>
-          <?php endif; ?>
-        </section>
-      <?php endif; ?>
-
-      <section class="cm-grid">
-        <article class="box cm-panel">
-          <div class="boxTitle">Dettagli soggiorno</div>
-          <?php if ($property['description']): ?>
-            <p><?= nl2br(cm_h((string)$property['description'])) ?></p>
-          <?php endif; ?>
-          <div class="cm-kv"><strong>Capienza:</strong> <?= (int)$property['max_guests'] ?> ospiti</div>
-          <div class="cm-kv"><strong>Letti:</strong> <?= (int)$property['beds'] ?></div>
-          <div class="cm-kv"><strong>Check-in:</strong> <?= cm_h(substr((string)$property['checkin_from'], 0, 5)) ?> - <?= cm_h(substr((string)$property['checkin_until'], 0, 5)) ?></div>
-          <div class="cm-kv"><strong>Check-out:</strong> entro <?= cm_h(substr((string)$property['checkout_until'], 0, 5)) ?></div>
-          <div class="cm-kv"><strong>Prezzo base:</strong> <?= cm_h(cm_fmt_money((float)$property['base_price'], (string)$property['currency'])) ?></div>
-
-          <?php if ($highlights): ?>
-            <div class="cm-subtitle">Punti forti</div>
-            <ul class="cm-list">
-              <?php foreach ($highlights as $item): ?>
-                <li><?= cm_h($item) ?></li>
-              <?php endforeach; ?>
-            </ul>
-          <?php endif; ?>
-
-          <?php if ($amenities): ?>
-            <div class="cm-subtitle">Servizi inclusi</div>
-            <ul class="cm-list">
-              <?php foreach ($amenities as $item): ?>
-                <li><?= cm_h($item) ?></li>
-              <?php endforeach; ?>
-            </ul>
-          <?php endif; ?>
-
-          <form method="get" class="cm-form" style="margin-top:14px;">
-            <input type="hidden" name="property" value="<?= cm_h($property['slug']) ?>">
-            <div class="cm-form-grid4">
-              <div>
-                <label>Check-in</label>
-                <input type="date" name="checkin" value="<?= cm_h($checkin) ?>" required />
-              </div>
-              <div>
-                <label>Check-out</label>
-                <input type="date" name="checkout" value="<?= cm_h($checkout) ?>" required />
-              </div>
-              <div>
-                <label>Ospiti</label>
-                <input type="number" name="guests" min="1" max="<?= (int)$property['max_guests'] ?>" value="<?= cm_h($guests) ?>" />
-              </div>
-              <div class="cm-form-submit">
-                <button class="btn-primary" type="submit">Verifica disponibilità</button>
-              </div>
-            </div>
-          </form>
-        </article>
-
-        <article class="box cm-panel">
-          <div class="boxTitle">Prenota</div>
-          <?php if ($quote): ?>
-            <div class="cm-quote">
-              <div><strong><?= (int)$quote['nights'] ?></strong> notti</div>
-              <div><?= cm_h(cm_fmt_money((float)$quote['nightly_rate'], (string)$quote['currency'])) ?> / notte</div>
-              <div>Pulizie: <?= cm_h(cm_fmt_money((float)$quote['cleaning_fee'], (string)$quote['currency'])) ?></div>
-              <div class="cm-quote-total">Totale stimato: <?= cm_h(cm_fmt_money((float)$quote['total'], (string)$quote['currency'])) ?></div>
-            </div>
-          <?php endif; ?>
-
-          <?php if ($checkin && $checkout): ?>
-            <div class="cm-booking-state <?= $isAvailable ? 'free' : 'busy' ?>">
-              <?= $isAvailable ? 'Disponibile per le date selezionate' : 'Non disponibile per le date selezionate' ?>
+      <section class="cm-public-hero">
+        <div class="cm-public-hero-media">
+          <?php if ($heroImage): ?>
+            <img src="<?= cm_h($heroImage) ?>" alt="<?= cm_h($property['name']) ?>">
+          <?php elseif ($logoUrl): ?>
+            <div class="cm-public-media-fallback">
+              <img class="cm-public-media-fallback-logo" src="<?= cm_h($logoUrl) ?>" alt="<?= cm_h($property['name']) ?>">
             </div>
           <?php else: ?>
-            <p>Inserisci le date per calcolare disponibilità e preventivo.</p>
+            <div class="cm-public-media-fallback">
+              <span><?= cm_h(cm_booking_monogram($property['name'])) ?></span>
+            </div>
           <?php endif; ?>
+        </div>
 
-          <form method="post" class="cm-form">
-            <input type="hidden" name="action" value="create_booking">
-            <input type="hidden" name="property_slug" value="<?= cm_h($property['slug']) ?>">
-            <input type="hidden" name="property_id" value="<?= (int)$property['id'] ?>">
-            <input type="hidden" name="checkin_date" value="<?= cm_h($checkin) ?>">
-            <input type="hidden" name="checkout_date" value="<?= cm_h($checkout) ?>">
-            <div class="cm-form-split">
-              <div>
-                <label>Nome e cognome</label>
-                <input name="guest_name" required />
+        <div class="cm-public-hero-copy">
+          <div class="cm-public-overline">Prenotazione diretta</div>
+          <h1><?= cm_h($property['name']) ?></h1>
+          <p><?= cm_h($description !== '' ? cm_excerpt($description, 260) : 'Prenota direttamente con la struttura, con calendario sincronizzato e disponibilita aggiornata in tempo reale.') ?></p>
+
+          <div class="cm-public-kpis">
+            <?php if ($locationLabel !== ''): ?>
+              <div class="cm-public-kpi">
+                <span>Localita</span>
+                <strong><?= cm_h($locationLabel) ?></strong>
               </div>
-              <div>
-                <label>Email</label>
-                <input name="guest_email" type="email" required />
-              </div>
+            <?php endif; ?>
+            <div class="cm-public-kpi">
+              <span>Ospiti</span>
+              <strong><?= (int)$property['max_guests'] ?></strong>
             </div>
-            <div class="cm-form-third">
-              <div>
-                <label>Telefono</label>
-                <input name="guest_phone" />
-              </div>
-              <div>
-                <label>Adulti</label>
-                <input name="adults" type="number" min="1" max="<?= (int)$property['max_guests'] ?>" value="<?= cm_h(max(1, $guests)) ?>" />
-              </div>
-              <div>
-                <label>Bambini</label>
-                <input name="children" type="number" min="0" value="0" />
-              </div>
+            <div class="cm-public-kpi">
+              <span>Letti</span>
+              <strong><?= (int)$property['beds'] ?></strong>
             </div>
-            <label>Note</label>
-            <textarea name="guest_notes" class="textarea" placeholder="Orario di arrivo, richieste particolari, note utili..."></textarea>
-            <button class="btn-primary" type="submit"<?= (!$checkin || !$checkout || !$isAvailable) ? ' disabled' : '' ?>>Invia richiesta</button>
-          </form>
-        </article>
+            <div class="cm-public-kpi">
+              <span>Da</span>
+              <strong><?= cm_h(cm_fmt_money((float)$property['base_price'], (string)$property['currency'])) ?></strong>
+            </div>
+          </div>
+
+          <?php if ($highlights): ?>
+            <div class="cm-feature-pills">
+              <?php foreach (array_slice($highlights, 0, 5) as $highlight): ?>
+                <span class="cm-feature-pill"><?= cm_h($highlight) ?></span>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
       </section>
 
-      <?php if ($property['arrival_instructions'] || $property['checkin_instructions'] || $property['checkout_instructions'] || $property['house_rules'] || $property['contact_name'] || $property['contact_phone'] || count($galleryImages) > 1): ?>
-        <section class="cm-info-grid">
-          <?php if ($property['arrival_instructions']): ?>
-            <article class="box cm-panel">
-              <div class="boxTitle">Come arrivare</div>
-              <div class="cm-richtext"><?= nl2br(cm_h((string)$property['arrival_instructions'])) ?></div>
-            </article>
-          <?php endif; ?>
+      <section class="cm-public-layout">
+        <div class="cm-public-main">
+          <article class="cm-public-panel">
+            <div class="cm-public-section-head">
+              <div>
+                <div class="cm-public-overline">Soggiorno</div>
+                <h2>Dettagli e servizi</h2>
+              </div>
+            </div>
 
-          <?php if ($property['checkin_instructions']): ?>
-            <article class="box cm-panel">
-              <div class="boxTitle">Istruzioni check-in</div>
-              <div class="cm-richtext"><?= nl2br(cm_h((string)$property['checkin_instructions'])) ?></div>
-            </article>
-          <?php endif; ?>
+            <?php if ($description !== ''): ?>
+              <div class="cm-public-copy"><?= nl2br(cm_h($description)) ?></div>
+            <?php endif; ?>
 
-          <?php if ($property['checkout_instructions']): ?>
-            <article class="box cm-panel">
-              <div class="boxTitle">Istruzioni check-out</div>
-              <div class="cm-richtext"><?= nl2br(cm_h((string)$property['checkout_instructions'])) ?></div>
-            </article>
-          <?php endif; ?>
+            <div class="cm-public-stats-grid">
+              <div class="cm-public-stat-box">
+                <span>Capienza</span>
+                <strong><?= (int)$property['max_guests'] ?> ospiti</strong>
+              </div>
+              <div class="cm-public-stat-box">
+                <span>Check-in</span>
+                <strong><?= cm_h(substr((string)$property['checkin_from'], 0, 5)) ?> - <?= cm_h(substr((string)$property['checkin_until'], 0, 5)) ?></strong>
+              </div>
+              <div class="cm-public-stat-box">
+                <span>Check-out</span>
+                <strong>Entro <?= cm_h(substr((string)$property['checkout_until'], 0, 5)) ?></strong>
+              </div>
+              <div class="cm-public-stat-box">
+                <span>Soggiorno minimo</span>
+                <strong><?= (int)$property['min_nights'] ?> notti</strong>
+              </div>
+            </div>
 
-          <?php if ($property['house_rules']): ?>
-            <article class="box cm-panel">
-              <div class="boxTitle">Regole della casa</div>
-              <div class="cm-richtext"><?= nl2br(cm_h((string)$property['house_rules'])) ?></div>
-            </article>
-          <?php endif; ?>
-
-          <?php if ($property['contact_name'] || $property['contact_phone']): ?>
-            <article class="box cm-panel">
-              <div class="boxTitle">Contatto soggiorno</div>
-              <?php if ($property['contact_name']): ?>
-                <div class="cm-kv"><strong>Referente:</strong> <?= cm_h($property['contact_name']) ?></div>
-              <?php endif; ?>
-              <?php if ($property['contact_phone']): ?>
-                <div class="cm-kv"><strong>Telefono:</strong> <a href="tel:<?= cm_h($property['contact_phone']) ?>"><?= cm_h($property['contact_phone']) ?></a></div>
-              <?php endif; ?>
-            </article>
-          <?php endif; ?>
+            <?php if ($amenities): ?>
+              <div class="cm-public-overline cm-public-overline--section">Servizi inclusi</div>
+              <div class="cm-feature-pills">
+                <?php foreach ($amenities as $item): ?>
+                  <span class="cm-feature-pill"><?= cm_h($item) ?></span>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+          </article>
 
           <?php if (count($galleryImages) > 1): ?>
-            <article class="box cm-panel cm-gallery-card">
-              <div class="boxTitle">Galleria</div>
-              <div class="cm-gallery-grid">
+            <article class="cm-public-panel">
+              <div class="cm-public-section-head">
+                <div>
+                  <div class="cm-public-overline">Media</div>
+                  <h2>Galleria immagini</h2>
+                </div>
+              </div>
+              <div class="cm-public-gallery">
                 <?php foreach ($galleryImages as $image): ?>
-                  <img src="<?= cm_h($image) ?>" alt="<?= cm_h($property['name']) ?>">
+                  <figure class="cm-public-gallery-item">
+                    <img src="<?= cm_h($image) ?>" alt="<?= cm_h($property['name']) ?>">
+                  </figure>
                 <?php endforeach; ?>
               </div>
             </article>
           <?php endif; ?>
-        </section>
-      <?php endif; ?>
+
+          <?php if ($videoUrls): ?>
+            <article class="cm-public-panel">
+              <div class="cm-public-section-head">
+                <div>
+                  <div class="cm-public-overline">Media</div>
+                  <h2>Video della struttura</h2>
+                </div>
+              </div>
+              <div class="cm-public-videos">
+                <?php foreach ($videoUrls as $videoUrl): ?>
+                  <div class="cm-public-video">
+                    <video src="<?= cm_h($videoUrl) ?>" controls playsinline preload="metadata"></video>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            </article>
+          <?php endif; ?>
+
+          <?php if ($property['arrival_instructions'] || $property['checkin_instructions'] || $property['checkout_instructions'] || $property['house_rules'] || $property['contact_name'] || $property['contact_phone']): ?>
+            <section class="cm-public-info-grid">
+              <?php if ($property['arrival_instructions']): ?>
+                <article class="cm-public-panel">
+                  <div class="cm-public-section-head">
+                    <div>
+                      <div class="cm-public-overline">Arrivo</div>
+                      <h2>Come arrivare</h2>
+                    </div>
+                  </div>
+                  <div class="cm-public-copy"><?= nl2br(cm_h((string)$property['arrival_instructions'])) ?></div>
+                </article>
+              <?php endif; ?>
+
+              <?php if ($property['checkin_instructions']): ?>
+                <article class="cm-public-panel">
+                  <div class="cm-public-section-head">
+                    <div>
+                      <div class="cm-public-overline">Accesso</div>
+                      <h2>Istruzioni check-in</h2>
+                    </div>
+                  </div>
+                  <div class="cm-public-copy"><?= nl2br(cm_h((string)$property['checkin_instructions'])) ?></div>
+                </article>
+              <?php endif; ?>
+
+              <?php if ($property['checkout_instructions']): ?>
+                <article class="cm-public-panel">
+                  <div class="cm-public-section-head">
+                    <div>
+                      <div class="cm-public-overline">Partenza</div>
+                      <h2>Istruzioni check-out</h2>
+                    </div>
+                  </div>
+                  <div class="cm-public-copy"><?= nl2br(cm_h((string)$property['checkout_instructions'])) ?></div>
+                </article>
+              <?php endif; ?>
+
+              <?php if ($property['house_rules']): ?>
+                <article class="cm-public-panel">
+                  <div class="cm-public-section-head">
+                    <div>
+                      <div class="cm-public-overline">Regole</div>
+                      <h2>Regole della casa</h2>
+                    </div>
+                  </div>
+                  <div class="cm-public-copy"><?= nl2br(cm_h((string)$property['house_rules'])) ?></div>
+                </article>
+              <?php endif; ?>
+
+              <?php if ($property['contact_name'] || $property['contact_phone']): ?>
+                <article class="cm-public-panel cm-public-contact">
+                  <div class="cm-public-section-head">
+                    <div>
+                      <div class="cm-public-overline">Assistenza</div>
+                      <h2>Contatto soggiorno</h2>
+                    </div>
+                  </div>
+                  <?php if ($property['contact_name']): ?>
+                    <div class="cm-public-contact-row">
+                      <span>Referente</span>
+                      <strong><?= cm_h($property['contact_name']) ?></strong>
+                    </div>
+                  <?php endif; ?>
+                  <?php if ($property['contact_phone']): ?>
+                    <div class="cm-public-contact-row">
+                      <span>Telefono</span>
+                      <strong><a href="tel:<?= cm_h($property['contact_phone']) ?>"><?= cm_h($property['contact_phone']) ?></a></strong>
+                    </div>
+                  <?php endif; ?>
+                </article>
+              <?php endif; ?>
+            </section>
+          <?php endif; ?>
+        </div>
+
+        <aside class="cm-public-sidebar">
+          <div class="cm-public-panel cm-public-panel--sticky">
+            <div class="cm-public-section-head">
+              <div>
+                <div class="cm-public-overline">Disponibilita</div>
+                <h2>Verifica e prenota</h2>
+              </div>
+            </div>
+
+            <form method="get" class="cm-form">
+              <input type="hidden" name="property" value="<?= cm_h($property['slug']) ?>">
+              <div class="cm-form-grid4">
+                <div>
+                  <label>Check-in</label>
+                  <input type="date" name="checkin" value="<?= cm_h($checkin) ?>" required />
+                </div>
+                <div>
+                  <label>Check-out</label>
+                  <input type="date" name="checkout" value="<?= cm_h($checkout) ?>" required />
+                </div>
+                <div>
+                  <label>Ospiti</label>
+                  <input type="number" name="guests" min="1" max="<?= (int)$property['max_guests'] ?>" value="<?= cm_h($guests) ?>" />
+                </div>
+                <div class="cm-form-submit">
+                  <button class="btn-primary" type="submit">Controlla</button>
+                </div>
+              </div>
+            </form>
+
+            <?php if ($quote): ?>
+              <div class="cm-quote">
+                <div><strong><?= (int)$quote['nights'] ?></strong> notti</div>
+                <div><?= cm_h(cm_fmt_money((float)$quote['nightly_rate'], (string)$quote['currency'])) ?> / notte</div>
+                <div>Pulizie: <?= cm_h(cm_fmt_money((float)$quote['cleaning_fee'], (string)$quote['currency'])) ?></div>
+                <div class="cm-quote-total">Totale stimato: <?= cm_h(cm_fmt_money((float)$quote['total'], (string)$quote['currency'])) ?></div>
+              </div>
+            <?php endif; ?>
+
+            <?php if ($checkin && $checkout): ?>
+              <div class="cm-booking-state <?= $isAvailable ? 'free' : 'busy' ?>">
+                <?= $isAvailable ? 'Disponibile per le date selezionate' : 'Non disponibile per le date selezionate' ?>
+              </div>
+            <?php else: ?>
+              <div class="cm-booking-state free">Seleziona le date per verificare disponibilita e costo.</div>
+            <?php endif; ?>
+
+            <form method="post" class="cm-form">
+              <input type="hidden" name="action" value="create_booking">
+              <input type="hidden" name="property_slug" value="<?= cm_h($property['slug']) ?>">
+              <input type="hidden" name="property_id" value="<?= (int)$property['id'] ?>">
+              <input type="hidden" name="checkin_date" value="<?= cm_h($checkin) ?>">
+              <input type="hidden" name="checkout_date" value="<?= cm_h($checkout) ?>">
+              <div class="cm-form-split">
+                <div>
+                  <label>Nome e cognome</label>
+                  <input name="guest_name" required />
+                </div>
+                <div>
+                  <label>Email</label>
+                  <input name="guest_email" type="email" required />
+                </div>
+              </div>
+              <div class="cm-form-third">
+                <div>
+                  <label>Telefono</label>
+                  <input name="guest_phone" />
+                </div>
+                <div>
+                  <label>Adulti</label>
+                  <input name="adults" type="number" min="1" max="<?= (int)$property['max_guests'] ?>" value="<?= cm_h(max(1, $guests)) ?>" />
+                </div>
+                <div>
+                  <label>Bambini</label>
+                  <input name="children" type="number" min="0" value="0" />
+                </div>
+              </div>
+              <label>Note</label>
+              <textarea name="guest_notes" class="textarea" placeholder="Orario di arrivo, richieste particolari, note utili..."></textarea>
+              <button class="btn-primary" type="submit"<?= (!$checkin || !$checkout || !$isAvailable) ? ' disabled' : '' ?>>Invia richiesta</button>
+            </form>
+          </div>
+        </aside>
+      </section>
     <?php else: ?>
-      <section class="box cm-panel">
-        <div class="boxTitle">Trova disponibilità</div>
+      <section class="cm-public-listing-hero">
+        <div class="cm-public-overline">Prenotazione diretta</div>
+        <h1>Scegli il soggiorno giusto per te</h1>
+        <p>Ogni struttura ha una propria identita visiva, contenuti dedicati e disponibilita sincronizzata con il calendario unico.</p>
+      </section>
+
+      <section class="cm-public-panel cm-public-filter-card">
+        <div class="cm-public-section-head">
+          <div>
+            <div class="cm-public-overline">Ricerca</div>
+            <h2>Filtra per date e ospiti</h2>
+          </div>
+        </div>
         <form method="get" class="cm-form">
           <div class="cm-form-grid4">
             <div>
@@ -292,33 +442,71 @@ $properties = $property ? [] : cm_public_properties([
               <input type="number" name="guests" min="1" value="<?= cm_h($guests) ?>" />
             </div>
             <div class="cm-form-submit">
-              <button class="btn-primary" type="submit">Cerca</button>
+              <button class="btn-primary" type="submit">Cerca disponibilita</button>
             </div>
           </div>
         </form>
       </section>
 
-      <section class="cm-property-list">
+      <section class="cm-public-cards">
         <?php foreach ($properties as $row): ?>
-          <article class="box cm-panel cm-public-card">
-            <?php $cardImage = cm_primary_image($row); ?>
-            <?php if ($cardImage): ?>
-              <img class="cm-public-thumb" src="<?= cm_h($cardImage) ?>" alt="<?= cm_h($row['name']) ?>">
-            <?php endif; ?>
-            <div class="boxTitle"><?= cm_h($row['name']) ?></div>
-            <div class="cm-kv"><strong>Località:</strong> <?= cm_h(trim(($row['city'] ?: '') . ' ' . ($row['region'] ?: ''))) ?></div>
-            <div class="cm-kv"><strong>Capienza:</strong> <?= (int)$row['max_guests'] ?> ospiti</div>
-            <div class="cm-kv"><strong>Prezzo base:</strong> <?= cm_h(cm_fmt_money((float)$row['base_price'], (string)$row['currency'])) ?></div>
-            <?php if ($row['description']): ?>
-              <p><?= cm_h(cm_excerpt((string)$row['description'], 180)) ?></p>
-            <?php endif; ?>
-            <a class="btn-primary" href="/booking.php?property=<?= rawurlencode((string)$row['slug']) ?><?php if ($checkin): ?>&checkin=<?= rawurlencode($checkin) ?><?php endif; ?><?php if ($checkout): ?>&checkout=<?= rawurlencode($checkout) ?><?php endif; ?><?php if ($guests): ?>&guests=<?= rawurlencode((string)$guests) ?><?php endif; ?>">Apri scheda</a>
+          <?php
+          $cardImage = cm_primary_image($row);
+          $cardLogo = cm_property_logo($row);
+          $cardVideos = cm_property_videos($row);
+          $cardLocation = trim((string)($row['city'] ?? '') . ' ' . (($row['region'] ?? '') !== '' ? '(' . (string)$row['region'] . ')' : ''));
+          ?>
+          <article class="cm-public-card">
+            <div class="cm-public-card-media">
+              <?php if ($cardImage): ?>
+                <img src="<?= cm_h($cardImage) ?>" alt="<?= cm_h($row['name']) ?>">
+              <?php else: ?>
+                <div class="cm-public-media-fallback">
+                  <span><?= cm_h(cm_booking_monogram((string)$row['name'])) ?></span>
+                </div>
+              <?php endif; ?>
+              <?php if ($cardLogo): ?>
+                <img class="cm-public-card-logo" src="<?= cm_h($cardLogo) ?>" alt="<?= cm_h($row['name']) ?>">
+              <?php endif; ?>
+            </div>
+
+            <div class="cm-public-card-body">
+              <div class="cm-public-card-head">
+                <div>
+                  <h2><?= cm_h($row['name']) ?></h2>
+                  <?php if ($cardLocation !== ''): ?>
+                    <p><?= cm_h($cardLocation) ?></p>
+                  <?php endif; ?>
+                </div>
+                <?php if ($cardVideos): ?>
+                  <span class="cm-feature-pill"><?= count($cardVideos) ?> video</span>
+                <?php endif; ?>
+              </div>
+
+              <div class="cm-public-card-stats">
+                <div><span>Ospiti</span><strong><?= (int)$row['max_guests'] ?></strong></div>
+                <div><span>Letti</span><strong><?= (int)$row['beds'] ?></strong></div>
+                <div><span>Da</span><strong><?= cm_h(cm_fmt_money((float)$row['base_price'], (string)$row['currency'])) ?></strong></div>
+              </div>
+
+              <?php if ($row['description']): ?>
+                <div class="cm-public-copy"><?= cm_h(cm_excerpt((string)$row['description'], 180)) ?></div>
+              <?php endif; ?>
+
+              <a class="btn-primary" href="/booking.php?property=<?= rawurlencode((string)$row['slug']) ?><?php if ($checkin): ?>&checkin=<?= rawurlencode($checkin) ?><?php endif; ?><?php if ($checkout): ?>&checkout=<?= rawurlencode($checkout) ?><?php endif; ?><?php if ($guests): ?>&guests=<?= rawurlencode((string)$guests) ?><?php endif; ?>">Apri scheda</a>
+            </div>
           </article>
         <?php endforeach; ?>
+
         <?php if (!$properties): ?>
-          <article class="box cm-panel">
-            <div class="boxTitle">Nessun immobile disponibile</div>
-            <p>Non ci sono immobili pubblicati compatibili con i filtri selezionati.</p>
+          <article class="cm-public-panel cm-public-empty">
+            <div class="cm-public-section-head">
+              <div>
+                <div class="cm-public-overline">Nessun risultato</div>
+                <h2>Nessun soggiorno compatibile</h2>
+              </div>
+            </div>
+            <p>Non ci sono immobili pubblicati compatibili con i filtri selezionati. Prova a modificare le date o il numero di ospiti.</p>
           </article>
         <?php endif; ?>
       </section>
