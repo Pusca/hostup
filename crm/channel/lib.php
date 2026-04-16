@@ -85,6 +85,114 @@ function cm_gallery_images(array $property): array {
   return $images;
 }
 
+function cm_project_root(): string {
+  return dirname(__DIR__, 2);
+}
+
+function cm_media_base_dir(): string {
+  return cm_project_root() . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'properties';
+}
+
+function cm_property_media_dir(int $propertyId): string {
+  return cm_media_base_dir() . DIRECTORY_SEPARATOR . $propertyId;
+}
+
+function cm_property_media_url(int $propertyId, string $filename): string {
+  return '/media/properties/' . rawurlencode((string)$propertyId) . '/' . rawurlencode($filename);
+}
+
+function cm_uploaded_file_list(array $spec): array {
+  $files = [];
+  $names = $spec['name'] ?? null;
+
+  if (!is_array($names)) {
+    if (($spec['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+      $files[] = $spec;
+    }
+    return $files;
+  }
+
+  foreach (array_keys($names) as $index) {
+    $error = $spec['error'][$index] ?? UPLOAD_ERR_NO_FILE;
+    if ($error === UPLOAD_ERR_NO_FILE) {
+      continue;
+    }
+    $files[] = [
+      'name' => $spec['name'][$index] ?? '',
+      'type' => $spec['type'][$index] ?? '',
+      'tmp_name' => $spec['tmp_name'][$index] ?? '',
+      'error' => $error,
+      'size' => $spec['size'][$index] ?? 0,
+    ];
+  }
+
+  return $files;
+}
+
+function cm_store_uploaded_image(array $file, int $propertyId): string {
+  if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+    throw new RuntimeException('Upload immagine non riuscito.');
+  }
+
+  $tmpName = (string)($file['tmp_name'] ?? '');
+  if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+    throw new RuntimeException('File upload non valido.');
+  }
+
+  $size = (int)($file['size'] ?? 0);
+  if ($size <= 0 || $size > 8 * 1024 * 1024) {
+    throw new RuntimeException('Ogni immagine deve essere inferiore a 8MB.');
+  }
+
+  $finfo = new finfo(FILEINFO_MIME_TYPE);
+  $mime = (string)$finfo->file($tmpName);
+  $extensions = [
+    'image/jpeg' => 'jpg',
+    'image/png' => 'png',
+    'image/webp' => 'webp',
+    'image/gif' => 'gif',
+  ];
+
+  $extension = $extensions[$mime] ?? null;
+  if ($extension === null) {
+    throw new RuntimeException('Formato immagine non supportato. Usa JPG, PNG, WEBP o GIF.');
+  }
+
+  $directory = cm_property_media_dir($propertyId);
+  if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+    throw new RuntimeException('Impossibile creare la cartella media dell\'immobile.');
+  }
+
+  $filename = date('YmdHis') . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
+  $destination = $directory . DIRECTORY_SEPARATOR . $filename;
+  if (!move_uploaded_file($tmpName, $destination)) {
+    throw new RuntimeException('Salvataggio immagine fallito.');
+  }
+
+  return cm_property_media_url($propertyId, $filename);
+}
+
+function cm_gallery_without_removed(array $images, array $removeImages): array {
+  $removeLookup = [];
+  foreach ($removeImages as $item) {
+    $key = trim((string)$item);
+    if ($key !== '') {
+      $removeLookup[$key] = true;
+    }
+  }
+
+  $result = [];
+  foreach ($images as $image) {
+    $image = trim((string)$image);
+    if ($image === '' || isset($removeLookup[$image])) {
+      continue;
+    }
+    $result[] = $image;
+  }
+
+  return array_values(array_unique($result));
+}
+
 function cm_channels(): array {
   return [
     'direct' => 'Direct',
@@ -444,10 +552,11 @@ function cm_save_client(array $input): int {
   return (int)db()->lastInsertId();
 }
 
-function cm_save_property(array $input): int {
+function cm_save_property(array $input, array $files = []): int {
   $id = cm_int_value($input['id'] ?? 0);
   $clientId = cm_int_value($input['client_id'] ?? 0);
   $name = trim((string)($input['name'] ?? ''));
+  $existing = $id > 0 ? cm_property($id) : null;
   if ($clientId <= 0) {
     throw new InvalidArgumentException('Seleziona il cliente proprietario.');
   }
@@ -461,14 +570,37 @@ function cm_save_property(array $input): int {
 
   $baseSlug = cm_slugify((string)($input['slug'] ?? $name));
   $slug = cm_unique_property_slug($baseSlug, $id);
+  $heroImageUrl = trim((string)($input['hero_image_url'] ?? ($existing['hero_image_url'] ?? '')));
+  $galleryImages = cm_lines($input['gallery_images'] ?? ($existing['gallery_images'] ?? null));
+
+  if (!empty($input['remove_hero_image'])) {
+    $heroImageUrl = '';
+  }
+  if (!empty($input['remove_gallery_images']) && is_array($input['remove_gallery_images'])) {
+    $galleryImages = cm_gallery_without_removed($galleryImages, $input['remove_gallery_images']);
+  }
+
+  if ($id > 0 && !empty($files['hero_image_file'])) {
+    $heroUpload = cm_uploaded_file_list($files['hero_image_file']);
+    if ($heroUpload !== []) {
+      $heroImageUrl = cm_store_uploaded_image($heroUpload[0], $id);
+    }
+  }
+
+  if ($id > 0 && !empty($files['gallery_image_files'])) {
+    foreach (cm_uploaded_file_list($files['gallery_image_files']) as $upload) {
+      $galleryImages[] = cm_store_uploaded_image($upload, $id);
+    }
+    $galleryImages = array_values(array_unique(array_filter($galleryImages, static fn(string $item): bool => trim($item) !== '')));
+  }
 
   $payload = [
     $clientId,
     $name,
     $slug,
     trim((string)($input['description'] ?? '')) ?: null,
-    trim((string)($input['hero_image_url'] ?? '')) ?: null,
-    cm_textarea_value($input['gallery_images'] ?? null),
+    $heroImageUrl !== '' ? $heroImageUrl : null,
+    !empty($galleryImages) ? implode("\n", $galleryImages) : null,
     cm_textarea_value($input['public_highlights'] ?? null),
     cm_textarea_value($input['amenities'] ?? null),
     cm_textarea_value($input['arrival_instructions'] ?? null),
@@ -527,8 +659,15 @@ function cm_save_property(array $input): int {
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
      )'
   )->execute($payload);
+  $newId = (int)db()->lastInsertId();
 
-  return (int)db()->lastInsertId();
+  if ($newId > 0 && (!empty($files['hero_image_file']) || !empty($files['gallery_image_files']))) {
+    $updateInput = $input;
+    $updateInput['id'] = $newId;
+    cm_save_property($updateInput, $files);
+  }
+
+  return $newId;
 }
 
 function cm_save_connection(array $input): int {

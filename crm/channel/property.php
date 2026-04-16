@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   try {
     if ($action === 'save_property') {
-      cm_save_property(array_merge($_POST, ['id' => $propertyId]));
+      cm_save_property(array_merge($_POST, ['id' => $propertyId]), $_FILES);
       cm_flash_set('success', 'Immobile aggiornato.');
       cm_redirect(cm_base_url('property.php') . '?id=' . $propertyId);
     }
@@ -63,6 +63,7 @@ $channelOptions = cm_channels();
 $clients = cm_clients();
 $directUrl = cm_direct_booking_url($property);
 $icalUrl = cm_ical_export_url($property);
+$galleryImages = cm_lines($property['gallery_images'] ?? null);
 ?>
 <!doctype html>
 <html lang="it">
@@ -107,7 +108,7 @@ $icalUrl = cm_ical_export_url($property);
     <section class="cm-grid">
       <article class="box cm-panel">
         <div class="boxTitle">Modifica immobile</div>
-        <form method="post" class="cm-form">
+        <form method="post" class="cm-form" enctype="multipart/form-data">
           <input type="hidden" name="action" value="save_property">
           <input type="hidden" name="id" value="<?= (int)$property['id'] ?>">
           <label>Cliente</label>
@@ -134,9 +135,30 @@ $icalUrl = cm_ical_export_url($property);
           <div class="cm-section-label">Contenuti pagina pubblica</div>
           <label>Immagine principale</label>
           <input name="hero_image_url" value="<?= cm_h($property['hero_image_url'] ?? '') ?>" placeholder="https://..." />
+          <label>Carica immagine principale</label>
+          <input type="file" name="hero_image_file" accept="image/jpeg,image/png,image/webp,image/gif" />
+          <?php if (!empty($property['hero_image_url'])): ?>
+            <div class="cm-current-media">
+              <img src="<?= cm_h((string)$property['hero_image_url']) ?>" alt="<?= cm_h($property['name']) ?>">
+              <label class="cm-check"><input type="checkbox" name="remove_hero_image" value="1"> Rimuovi immagine principale attuale</label>
+            </div>
+          <?php endif; ?>
 
           <label>Galleria immagini</label>
           <textarea name="gallery_images" class="textarea" placeholder="Una URL per riga"><?= cm_h($property['gallery_images'] ?? '') ?></textarea>
+          <label>Carica immagini galleria</label>
+          <input type="file" name="gallery_image_files[]" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+          <?php if ($galleryImages): ?>
+            <div class="cm-existing-gallery">
+              <?php foreach ($galleryImages as $image): ?>
+                <label class="cm-media-thumb">
+                  <img src="<?= cm_h($image) ?>" alt="<?= cm_h($property['name']) ?>">
+                  <span class="cm-muted">Rimuovi</span>
+                  <input type="checkbox" name="remove_gallery_images[]" value="<?= cm_h($image) ?>">
+                </label>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
 
           <div class="cm-form-split">
             <div>
