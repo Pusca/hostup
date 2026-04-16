@@ -51,7 +51,7 @@ $flash = cm_flash_get();
   <link rel="stylesheet" href="<?= cm_h(CRM_BASE_URL) ?>/assets/crm.css">
   <link rel="stylesheet" href="<?= cm_h(CRM_BASE_URL) ?>/assets/channel.css">
 </head>
-<body class="crm-bg">
+<body class="crm-bg cm-admin">
   <header class="topbar">
     <div class="wrap">
       <div class="brand">
@@ -66,17 +66,24 @@ $flash = cm_flash_get();
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="head">
-      <div>
+  <main class="wrap cm-shell">
+    <section class="cm-page-header">
+      <div class="cm-page-copy">
+        <div class="cm-eyebrow">Workspace operativo</div>
         <h1>Channel Manager</h1>
-        <p>Gestione clienti, immobili, canali e calendario unico. Questo MVP copre prenotazione diretta, import/export iCal e pannello operativo interno.</p>
+        <p>Un unico pannello per clienti, immobili, calendario consolidato, prenotazioni dirette e sincronizzazioni esterne.</p>
+        <div class="cm-chip-row">
+          <span class="cm-chip">Calendario unico</span>
+          <span class="cm-chip">Prenotazione diretta</span>
+          <span class="cm-chip">Sync iCal</span>
+        </div>
       </div>
-      <div class="actions">
+      <div class="cm-page-actions">
         <form method="post">
           <input type="hidden" name="action" value="sync_all">
-          <button class="btn" type="submit">Sync tutti i feed iCal</button>
+          <button class="btn-primary" type="submit">Sincronizza tutti i feed</button>
         </form>
+        <a class="btn" href="/booking.php" target="_blank" rel="noopener">Apri booking engine</a>
       </div>
     </section>
 
@@ -88,24 +95,62 @@ $flash = cm_flash_get();
       <article class="cm-stat">
         <div class="cm-stat-label">Clienti</div>
         <div class="cm-stat-value"><?= cm_h($stats['clients']) ?></div>
+        <div class="cm-stat-meta">Portafoglio proprietari attivo</div>
       </article>
       <article class="cm-stat">
         <div class="cm-stat-label">Immobili</div>
         <div class="cm-stat-value"><?= cm_h($stats['properties']) ?></div>
+        <div class="cm-stat-meta">Unita censite nel manager</div>
       </article>
       <article class="cm-stat">
         <div class="cm-stat-label">Pubblicati</div>
         <div class="cm-stat-value"><?= cm_h($stats['published_properties']) ?></div>
+        <div class="cm-stat-meta">Visibili nel booking engine</div>
       </article>
       <article class="cm-stat">
         <div class="cm-stat-label">Prenotazioni attive</div>
         <div class="cm-stat-value"><?= cm_h($stats['active_bookings']) ?></div>
+        <div class="cm-stat-meta">Occupazioni non chiuse</div>
       </article>
     </section>
 
-    <section class="cm-grid">
+    <section class="cm-workflow">
+      <article class="cm-flow-card">
+        <div class="cm-flow-step">1</div>
+        <div>
+          <strong>Crea il cliente</strong>
+          <p>Inserisci referente, azienda e contatti del proprietario.</p>
+        </div>
+      </article>
+      <article class="cm-flow-card">
+        <div class="cm-flow-step">2</div>
+        <div>
+          <strong>Crea l'immobile</strong>
+          <p>Compila capacita, prezzi, regole base e pubblicazione diretta.</p>
+        </div>
+      </article>
+      <article class="cm-flow-card">
+        <div class="cm-flow-step">3</div>
+        <div>
+          <strong>Collega i canali</strong>
+          <p>Importa Airbnb/Booking via iCal o future API native.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="cm-page-section">
+      <div class="cm-section-head">
+        <div>
+          <div class="cm-eyebrow">Setup</div>
+          <h2>Anagrafiche iniziali</h2>
+          <p>Le due operazioni da fare prima di iniziare a sincronizzare i canali.</p>
+        </div>
+      </div>
+
+      <section class="cm-grid">
       <article class="box cm-panel">
         <div class="boxTitle"><?= $editClient ? 'Modifica cliente' : 'Nuovo cliente' ?></div>
+        <div class="cm-form-note">Usa questa scheda per i dati del proprietario o del referente operativo.</div>
         <form method="post" class="cm-form">
           <input type="hidden" name="action" value="save_client">
           <?php if ($editClient): ?>
@@ -135,6 +180,7 @@ $flash = cm_flash_get();
         <?php if (!$clients): ?>
           <p>Prima crea almeno un cliente proprietario.</p>
         <?php else: ?>
+          <div class="cm-form-note">Inserisci i dati base dell'unita. I contenuti pubblici e i media si completano poi nel dettaglio immobile.</div>
           <form method="post" class="cm-form">
             <input type="hidden" name="action" value="save_property">
             <label>Cliente</label>
@@ -165,7 +211,7 @@ $flash = cm_flash_get();
                 <input name="address_line1" placeholder="Via Roma 10" />
               </div>
               <div>
-                <label>Città</label>
+                <label>Citta</label>
                 <input name="city" placeholder="Roma" />
               </div>
             </div>
@@ -248,13 +294,18 @@ $flash = cm_flash_get();
           </form>
         <?php endif; ?>
       </article>
+      </section>
     </section>
 
-    <section class="box cm-panel" style="margin-top:18px;">
-      <div class="tableTop">
-        <div class="tt">Clienti gestiti</div>
-        <div class="hint">Modifica anagrafica e monitora il numero di immobili associati.</div>
+    <section class="cm-page-section">
+      <div class="cm-section-head">
+        <div>
+          <div class="cm-eyebrow">Clienti</div>
+          <h2>Clienti gestiti</h2>
+          <p>Rivedi rapidamente anagrafica, contatti e consistenza del portafoglio.</p>
+        </div>
       </div>
+      <div class="box cm-panel">
       <div class="tableWrap">
         <table class="tbl">
           <thead>
@@ -276,7 +327,7 @@ $flash = cm_flash_get();
                   <div class="cm-muted"><?= cm_h($client['phone'] ?: '-') ?></div>
                 </td>
                 <td><?= (int)$client['property_count'] ?></td>
-                <td><a class="btn" href="<?= cm_h(cm_base_url('index.php') . '?edit_client=' . (int)$client['id']) ?>">Modifica</a></td>
+                <td><a class="btn" href="<?= cm_h(cm_base_url('index.php') . '?edit_client=' . (int)$client['id']) ?>">Apri scheda</a></td>
               </tr>
             <?php endforeach; ?>
             <?php if (!$clients): ?>
@@ -285,13 +336,18 @@ $flash = cm_flash_get();
           </tbody>
         </table>
       </div>
+      </div>
     </section>
 
-    <section class="box cm-panel">
-      <div class="tableTop">
-        <div class="tt">Immobili gestiti</div>
-        <div class="hint">Apri il dettaglio per calendario, sync canali, blocchi manuali e URL pubblici.</div>
+    <section class="cm-page-section">
+      <div class="cm-section-head">
+        <div>
+          <div class="cm-eyebrow">Portfolio</div>
+          <h2>Immobili gestiti</h2>
+          <p>Da qui accedi al dettaglio immobile, ai contenuti pubblici, al calendario e ai canali collegati.</p>
+        </div>
       </div>
+      <div class="box cm-panel">
       <div class="tableWrap">
         <table class="tbl">
           <thead>
@@ -312,10 +368,10 @@ $flash = cm_flash_get();
                 <td><?= cm_h($property['client_name']) ?></td>
                 <td><?= cm_h(trim(($property['city'] ?: '') . ' ' . ($property['region'] ? '(' . $property['region'] . ')' : ''))) ?></td>
                 <td><?= (int)$property['max_guests'] ?> ospiti / <?= (int)$property['beds'] ?> letti</td>
-                <td><?= (int)$property['published'] ? 'Pubblicato' : 'Bozza' ?></td>
-                <td><?= (int)$property['active_booking_count'] ?></td>
+                <td><span class="cm-status-badge <?= (int)$property['published'] ? 'is-live' : 'is-draft' ?>"><?= (int)$property['published'] ? 'Pubblicato' : 'Bozza' ?></span></td>
+                <td><span class="cm-counter-pill"><?= (int)$property['active_booking_count'] ?></span></td>
                 <td class="cm-actions-cell">
-                  <a class="btn" href="<?= cm_h(cm_base_url('property.php') . '?id=' . (int)$property['id']) ?>">Gestisci</a>
+                  <a class="btn" href="<?= cm_h(cm_base_url('property.php') . '?id=' . (int)$property['id']) ?>">Apri dettaglio</a>
                   <a class="btn" target="_blank" rel="noopener" href="<?= cm_h(cm_direct_booking_url($property)) ?>">Pagina diretta</a>
                 </td>
               </tr>
@@ -326,13 +382,18 @@ $flash = cm_flash_get();
           </tbody>
         </table>
       </div>
+      </div>
     </section>
 
-    <section class="box cm-panel" style="margin-top:18px;">
-      <div class="tableTop">
-        <div class="tt">Prenotazioni recenti</div>
-        <div class="hint">Calendario unico consolidato da direct booking, blocchi manuali e feed esterni.</div>
+    <section class="cm-page-section">
+      <div class="cm-section-head">
+        <div>
+          <div class="cm-eyebrow">Attivita</div>
+          <h2>Prenotazioni recenti</h2>
+          <p>Ultimi movimenti sul calendario unico consolidato da direct booking, blocchi manuali e canali esterni.</p>
+        </div>
       </div>
+      <div class="box cm-panel">
       <div class="tableWrap">
         <table class="tbl">
           <thead>
@@ -354,7 +415,7 @@ $flash = cm_flash_get();
                 <td><?= cm_h($booking['guest_name'] ?: ($booking['summary'] ?: '-')) ?></td>
                 <td><?= cm_h(cm_fmt_date($booking['checkin_date'])) ?></td>
                 <td><?= cm_h(cm_fmt_date($booking['checkout_date'])) ?></td>
-                <td><?= cm_h(cm_booking_status_label((string)$booking['status'])) ?></td>
+                <td><span class="cm-status-badge <?= $booking['status'] === 'confirmed' ? 'is-live' : ($booking['status'] === 'pending' ? 'is-warning' : 'is-draft') ?>"><?= cm_h(cm_booking_status_label((string)$booking['status'])) ?></span></td>
                 <td><?= cm_h(cm_fmt_money((float)$booking['total_amount'], (string)$booking['currency'])) ?></td>
               </tr>
             <?php endforeach; ?>
@@ -363,6 +424,7 @@ $flash = cm_flash_get();
             <?php endif; ?>
           </tbody>
         </table>
+      </div>
       </div>
     </section>
   </main>
