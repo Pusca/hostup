@@ -59,6 +59,7 @@ $flash = cm_flash_get();
         <div class="bn">HostUp <span>Channel</span></div>
       </div>
       <div class="right">
+        <a class="btn" href="<?= cm_h(cm_base_url('owner.php')) ?>">Owner</a>
         <a class="btn" href="<?= cm_h(CRM_BASE_URL) ?>/index.php">CRM</a>
         <div class="who"><?= cm_h($u['name']) ?></div>
         <a class="btn" href="<?= cm_h(CRM_BASE_URL) ?>/logout.php">Esci</a>
@@ -83,6 +84,7 @@ $flash = cm_flash_get();
           <input type="hidden" name="action" value="sync_all">
           <button class="btn-primary" type="submit">Sincronizza tutti i feed</button>
         </form>
+        <a class="btn" href="<?= cm_h(cm_base_url('owner.php')) ?>">Apri owner dashboard</a>
         <a class="btn" href="/booking.php" target="_blank" rel="noopener">Apri booking engine</a>
       </div>
     </section>
