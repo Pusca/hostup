@@ -140,9 +140,6 @@ CREATE TABLE IF NOT EXISTS cm_tasks (
     ON DELETE CASCADE,
   CONSTRAINT fk_cm_tasks_booking
     FOREIGN KEY (booking_id) REFERENCES cm_bookings(id)
-    ON DELETE SET NULL,
-  CONSTRAINT fk_cm_tasks_created_by_user
-    FOREIGN KEY (created_by_user_id) REFERENCES crm_users(id)
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -172,9 +169,6 @@ CREATE TABLE IF NOT EXISTS cm_operational_updates (
     ON DELETE SET NULL,
   CONSTRAINT fk_cm_operational_updates_task
     FOREIGN KEY (task_id) REFERENCES cm_tasks(id)
-    ON DELETE SET NULL,
-  CONSTRAINT fk_cm_operational_updates_created_by_user
-    FOREIGN KEY (created_by_user_id) REFERENCES crm_users(id)
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
