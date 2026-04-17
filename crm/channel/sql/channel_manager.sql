@@ -116,6 +116,68 @@ CREATE TABLE IF NOT EXISTS cm_bookings (
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS cm_tasks (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  property_id INT UNSIGNED NOT NULL,
+  booking_id INT UNSIGNED DEFAULT NULL,
+  created_by_user_id INT UNSIGNED DEFAULT NULL,
+  task_type VARCHAR(30) NOT NULL DEFAULT 'general',
+  status VARCHAR(30) NOT NULL DEFAULT 'open',
+  priority VARCHAR(20) NOT NULL DEFAULT 'normal',
+  title VARCHAR(190) NOT NULL,
+  details TEXT DEFAULT NULL,
+  assignee_name VARCHAR(160) DEFAULT NULL,
+  due_at DATETIME DEFAULT NULL,
+  completed_at DATETIME DEFAULT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_cm_tasks_property_status_due (property_id, status, due_at),
+  KEY idx_cm_tasks_booking (booking_id),
+  KEY idx_cm_tasks_status_due (status, due_at),
+  CONSTRAINT fk_cm_tasks_property
+    FOREIGN KEY (property_id) REFERENCES cm_properties(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_cm_tasks_booking
+    FOREIGN KEY (booking_id) REFERENCES cm_bookings(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_cm_tasks_created_by_user
+    FOREIGN KEY (created_by_user_id) REFERENCES crm_users(id)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cm_operational_updates (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  property_id INT UNSIGNED NOT NULL,
+  booking_id INT UNSIGNED DEFAULT NULL,
+  task_id INT UNSIGNED DEFAULT NULL,
+  created_by_user_id INT UNSIGNED DEFAULT NULL,
+  update_type VARCHAR(30) NOT NULL DEFAULT 'daily',
+  owner_visible TINYINT(1) NOT NULL DEFAULT 1,
+  title VARCHAR(190) NOT NULL,
+  body TEXT DEFAULT NULL,
+  happened_at DATETIME DEFAULT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_cm_operational_updates_property_time (property_id, happened_at, created_at),
+  KEY idx_cm_operational_updates_booking (booking_id),
+  KEY idx_cm_operational_updates_task (task_id),
+  KEY idx_cm_operational_updates_owner_visible (owner_visible, happened_at),
+  CONSTRAINT fk_cm_operational_updates_property
+    FOREIGN KEY (property_id) REFERENCES cm_properties(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_cm_operational_updates_booking
+    FOREIGN KEY (booking_id) REFERENCES cm_bookings(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_cm_operational_updates_task
+    FOREIGN KEY (task_id) REFERENCES cm_tasks(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_cm_operational_updates_created_by_user
+    FOREIGN KEY (created_by_user_id) REFERENCES crm_users(id)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS cm_sync_logs (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   connection_id INT UNSIGNED NOT NULL,

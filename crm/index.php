@@ -114,6 +114,7 @@ if (isset($_GET['api'])) {
 
       <div class="right">
         <a class="btn" href="<?= CRM_BASE_URL ?>/channel/index.php">Channel</a>
+        <a class="btn" href="<?= CRM_BASE_URL ?>/channel/owner.php">Owner</a>
         <div class="who"><?= htmlspecialchars($u['name']) ?></div>
         <a class="btn" href="<?= CRM_BASE_URL ?>/logout.php">Esci</a>
       </div>

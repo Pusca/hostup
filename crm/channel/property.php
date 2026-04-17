@@ -3,6 +3,27 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
+function cm_property_task_booking_option_label(array $booking): string {
+  $label = trim((string)($booking['guest_name'] ?: ($booking['summary'] ?: 'Prenotazione #' . (int)$booking['id'])));
+  $dates = trim(cm_fmt_date((string)$booking['checkin_date']) . ' - ' . cm_fmt_date((string)$booking['checkout_date']));
+  return $label . ' (' . $dates . ')';
+}
+
+function cm_property_update_context_label(array $update): string {
+  $parts = [];
+  $bookingLabel = trim((string)($update['booking_guest_name'] ?: ($update['booking_summary'] ?: '')));
+  $taskLabel = trim((string)($update['task_title'] ?? ''));
+
+  if ($bookingLabel !== '') {
+    $parts[] = 'Prenotazione: ' . $bookingLabel;
+  }
+  if ($taskLabel !== '') {
+    $parts[] = 'Task: ' . $taskLabel;
+  }
+
+  return implode(' - ', $parts);
+}
+
 $propertyId = (int)($_GET['id'] ?? 0);
 $property = $propertyId > 0 ? cm_property($propertyId) : null;
 
@@ -46,6 +67,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       cm_redirect(cm_base_url('property.php') . '?id=' . $propertyId);
     }
 
+    if ($action === 'save_task') {
+      cm_save_task(array_merge($_POST, ['property_id' => $propertyId]), (int)$u['id']);
+      cm_flash_set('success', 'Task operativa creata.');
+      cm_redirect(cm_base_url('property.php') . '?id=' . $propertyId . '#operativita');
+    }
+
+    if ($action === 'update_task_status') {
+      cm_update_task_status((int)($_POST['task_id'] ?? 0), (string)($_POST['status'] ?? ''));
+      cm_flash_set('success', 'Stato task aggiornato.');
+      cm_redirect(cm_base_url('property.php') . '?id=' . $propertyId . '#operativita');
+    }
+
+    if ($action === 'save_operational_update') {
+      cm_save_operational_update(array_merge($_POST, ['property_id' => $propertyId]), (int)$u['id']);
+      cm_flash_set('success', 'Aggiornamento operativo salvato.');
+      cm_redirect(cm_base_url('property.php') . '?id=' . $propertyId . '#aggiornamenti');
+    }
+
     throw new RuntimeException('Azione non valida.');
   } catch (Throwable $e) {
     cm_flash_set('error', $e->getMessage());
@@ -57,8 +96,15 @@ $property = cm_property($propertyId);
 $connections = cm_property_connections($propertyId);
 $bookings = cm_recent_bookings(100, $propertyId);
 $occupancy = cm_property_occupancy($propertyId, 60);
+$tasks = cm_property_tasks($propertyId, 30);
+$taskSummary = cm_property_task_summary($propertyId);
+$operationalUpdates = cm_property_operational_updates($propertyId, 20, false);
 $flash = cm_flash_get();
 $statusOptions = cm_booking_statuses();
+$taskStatusOptions = cm_task_statuses();
+$taskTypeOptions = cm_task_types();
+$taskPriorityOptions = cm_task_priorities();
+$operationalUpdateTypeOptions = cm_operational_update_types();
 $channelOptions = cm_channels();
 $clients = cm_clients();
 $directUrl = cm_direct_booking_url($property);
@@ -86,6 +132,7 @@ $heroPreview = cm_primary_image($property);
       </div>
       <div class="right">
         <a class="btn" href="<?= cm_h(cm_base_url('index.php')) ?>">Dashboard</a>
+        <a class="btn" href="<?= cm_h(cm_base_url('owner.php') . '?client_id=' . (int)$property['client_id']) ?>">Owner</a>
         <a class="btn" href="<?= cm_h(CRM_BASE_URL) ?>/index.php">CRM</a>
         <a class="btn" href="<?= cm_h(CRM_BASE_URL) ?>/logout.php">Esci</a>
       </div>
@@ -106,6 +153,7 @@ $heroPreview = cm_primary_image($property);
       </div>
       <div class="cm-page-actions">
         <a class="btn-primary" target="_blank" rel="noopener" href="<?= cm_h($directUrl) ?>">Apri pagina diretta</a>
+        <a class="btn" href="<?= cm_h(cm_base_url('owner.php') . '?client_id=' . (int)$property['client_id']) ?>">Vista proprietario</a>
         <a class="btn" target="_blank" rel="noopener" href="<?= cm_h($icalUrl) ?>">Apri feed iCal</a>
       </div>
     </section>
@@ -136,6 +184,8 @@ $heroPreview = cm_primary_image($property);
 
     <nav class="cm-subnav">
       <a href="#scheda">Scheda</a>
+      <a href="#operativita">Operativita</a>
+      <a href="#aggiornamenti">Aggiornamenti</a>
       <a href="#calendario">Calendario</a>
       <a href="#canali">Canali</a>
       <a href="#prenotazioni">Prenotazioni</a>
@@ -397,6 +447,250 @@ $heroPreview = cm_primary_image($property);
             </div>
             <button class="btn-primary" type="submit">Crea blocco</button>
           </form>
+        </article>
+      </section>
+    </section>
+
+    <section id="operativita" class="cm-page-section">
+      <div class="cm-section-head">
+        <div>
+          <div class="cm-eyebrow">Operativita</div>
+          <h2>Task operative</h2>
+          <p>Pulizie, manutenzioni, check-in/check-out e richieste ospite vengono tracciati qui, per immobile e opzionalmente per prenotazione.</p>
+        </div>
+      </div>
+
+      <section class="cm-grid">
+        <article class="box cm-panel">
+          <div class="boxTitle">Nuova task</div>
+          <div class="cm-form-note">Crea un attivita manuale e collega la prenotazione solo se serve contesto operativo.</div>
+          <form method="post" class="cm-form">
+            <input type="hidden" name="action" value="save_task">
+
+            <label>Titolo task</label>
+            <input name="title" required placeholder="Pulizia pre-arrivo, check-in ospite, manutenzione..." />
+
+            <div class="cm-form-third">
+              <div>
+                <label>Tipo</label>
+                <select name="task_type" class="select">
+                  <?php foreach ($taskTypeOptions as $taskTypeKey => $taskTypeLabel): ?>
+                    <option value="<?= cm_h($taskTypeKey) ?>"><?= cm_h($taskTypeLabel) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div>
+                <label>Priorita</label>
+                <select name="priority" class="select">
+                  <?php foreach ($taskPriorityOptions as $priorityKey => $priorityLabel): ?>
+                    <option value="<?= cm_h($priorityKey) ?>"<?= $priorityKey === 'normal' ? ' selected' : '' ?>><?= cm_h($priorityLabel) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div>
+                <label>Scadenza</label>
+                <input name="due_at" type="datetime-local" />
+              </div>
+            </div>
+
+            <div class="cm-form-split">
+              <div>
+                <label>Assegnata a</label>
+                <input name="assignee_name" placeholder="Nome collaboratore o fornitore" />
+              </div>
+              <div>
+                <label>Prenotazione collegata</label>
+                <select name="booking_id" class="select">
+                  <option value="">Nessuna prenotazione</option>
+                  <?php foreach ($bookings as $booking): ?>
+                    <option value="<?= (int)$booking['id'] ?>"><?= cm_h(cm_property_task_booking_option_label($booking)) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+
+            <label>Dettagli operativi</label>
+            <textarea name="details" class="textarea" placeholder="Checklist, note di accesso, materiale necessario, criticita..."></textarea>
+
+            <button class="btn-primary" type="submit">Crea task</button>
+          </form>
+        </article>
+
+        <article class="box cm-panel">
+          <div class="boxTitle">Stato operativita</div>
+          <div class="cm-task-summary-grid">
+            <div class="cm-task-summary-card">
+              <span>Aperte</span>
+              <strong><?= (int)$taskSummary['open_tasks'] ?></strong>
+            </div>
+            <div class="cm-task-summary-card">
+              <span>In corso</span>
+              <strong><?= (int)$taskSummary['in_progress_tasks'] ?></strong>
+            </div>
+            <div class="cm-task-summary-card">
+              <span>Chiuse</span>
+              <strong><?= (int)$taskSummary['done_tasks'] ?></strong>
+            </div>
+            <div class="cm-task-summary-card<?= (int)$taskSummary['overdue_tasks'] > 0 ? ' is-overdue' : '' ?>">
+              <span>In ritardo</span>
+              <strong><?= (int)$taskSummary['overdue_tasks'] ?></strong>
+            </div>
+          </div>
+
+          <div class="cm-section-label">Coda operativa</div>
+          <?php if ($tasks): ?>
+            <div class="cm-task-list">
+              <?php foreach ($tasks as $task): ?>
+                <?php
+                $isTaskOverdue = (string)($task['due_at'] ?? '') !== ''
+                  && in_array((string)$task['status'], cm_active_task_statuses(), true)
+                  && strtotime((string)$task['due_at']) < time();
+                $linkedBookingLabel = trim((string)($task['booking_guest_name'] ?: ($task['booking_summary'] ?: '')));
+                ?>
+                <article class="cm-task-card<?= $isTaskOverdue ? ' is-overdue' : '' ?>">
+                  <div class="cm-task-card-top">
+                    <div>
+                      <strong><?= cm_h($task['title']) ?></strong>
+                      <div class="cm-muted">
+                        <?= cm_h(cm_task_type_label((string)$task['task_type'])) ?><?php if ($task['created_by_name']): ?> - creata da <?= cm_h($task['created_by_name']) ?><?php endif; ?>
+                      </div>
+                    </div>
+                    <div class="cm-task-card-badges">
+                      <span class="cm-status-badge <?= cm_h(cm_task_status_badge_class((string)$task['status'])) ?>"><?= cm_h(cm_task_status_label((string)$task['status'])) ?></span>
+                      <span class="cm-counter-pill"><?= cm_h(cm_task_priority_label((string)$task['priority'])) ?></span>
+                    </div>
+                  </div>
+
+                  <div class="cm-task-meta">
+                    <span>Assegnata a: <?= cm_h($task['assignee_name'] ?: 'da assegnare') ?></span>
+                    <span>Scadenza: <?= cm_h($task['due_at'] ? cm_fmt_datetime((string)$task['due_at']) : 'non impostata') ?></span>
+                    <?php if ($linkedBookingLabel !== ''): ?>
+                      <span>Prenotazione: <?= cm_h($linkedBookingLabel) ?></span>
+                    <?php endif; ?>
+                  </div>
+
+                  <?php if ($task['details']): ?>
+                    <div class="cm-richtext"><?= nl2br(cm_h((string)$task['details'])) ?></div>
+                  <?php endif; ?>
+
+                  <form method="post" class="cm-inline-form">
+                    <input type="hidden" name="action" value="update_task_status">
+                    <input type="hidden" name="task_id" value="<?= (int)$task['id'] ?>">
+                    <select class="select" name="status">
+                      <?php foreach ($taskStatusOptions as $taskStatusKey => $taskStatusLabel): ?>
+                        <option value="<?= cm_h($taskStatusKey) ?>"<?= $taskStatusKey === $task['status'] ? ' selected' : '' ?>><?= cm_h($taskStatusLabel) ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                    <button class="btn" type="submit">Aggiorna stato</button>
+                    <?php if ($task['booking_id']): ?>
+                      <a class="btn" href="#prenotazioni">Apri prenotazioni</a>
+                    <?php endif; ?>
+                  </form>
+                </article>
+              <?php endforeach; ?>
+            </div>
+          <?php else: ?>
+            <div class="cm-owner-empty">Nessuna task operativa presente per questo immobile.</div>
+          <?php endif; ?>
+        </article>
+      </section>
+    </section>
+
+    <section id="aggiornamenti" class="cm-page-section">
+      <div class="cm-section-head">
+        <div>
+          <div class="cm-eyebrow">Owner feed</div>
+          <h2>Aggiornamenti operativi</h2>
+          <p>Usa questa sezione per lasciare note leggibili dal proprietario: avanzamento pulizie, check-in gestito, criticita, aggiornamenti sul soggiorno.</p>
+        </div>
+      </div>
+
+      <section class="cm-grid">
+        <article class="box cm-panel">
+          <div class="boxTitle">Nuovo aggiornamento</div>
+          <div class="cm-form-note">Gli aggiornamenti marcati come visibili al proprietario entrano nell owner dashboard e nella timeline condivisa.</div>
+          <form method="post" class="cm-form">
+            <input type="hidden" name="action" value="save_operational_update">
+
+            <label>Titolo</label>
+            <input name="title" required placeholder="Pulizia completata, check-in eseguito, piccola manutenzione..." />
+
+            <div class="cm-form-third">
+              <div>
+                <label>Tipo aggiornamento</label>
+                <select name="update_type" class="select">
+                  <?php foreach ($operationalUpdateTypeOptions as $updateTypeKey => $updateTypeLabel): ?>
+                    <option value="<?= cm_h($updateTypeKey) ?>"><?= cm_h($updateTypeLabel) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div>
+                <label>Quando e successo</label>
+                <input name="happened_at" type="datetime-local" />
+              </div>
+              <div>
+                <label>Task collegata</label>
+                <select name="task_id" class="select">
+                  <option value="">Nessuna task</option>
+                  <?php foreach ($tasks as $task): ?>
+                    <option value="<?= (int)$task['id'] ?>"><?= cm_h($task['title']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+
+            <label>Prenotazione collegata</label>
+            <select name="booking_id" class="select">
+              <option value="">Nessuna prenotazione</option>
+              <?php foreach ($bookings as $booking): ?>
+                <option value="<?= (int)$booking['id'] ?>"><?= cm_h(cm_property_task_booking_option_label($booking)) ?></option>
+              <?php endforeach; ?>
+            </select>
+
+            <label>Dettagli</label>
+            <textarea name="body" class="textarea" placeholder="Spiega cosa e stato fatto, cosa resta da chiudere e se il proprietario deve sapere altro."></textarea>
+
+            <label class="cm-check"><input type="checkbox" name="owner_visible" value="1" checked> Visibile al proprietario</label>
+            <button class="btn-primary" type="submit">Salva aggiornamento</button>
+          </form>
+        </article>
+
+        <article class="box cm-panel">
+          <div class="boxTitle">Storico aggiornamenti</div>
+          <?php if ($operationalUpdates): ?>
+            <div class="cm-update-list">
+              <?php foreach ($operationalUpdates as $update): ?>
+                <?php $contextLabel = cm_property_update_context_label($update); ?>
+                <article class="cm-update-card<?= (string)$update['update_type'] === 'issue' ? ' is-issue' : '' ?>">
+                  <div class="cm-update-card-top">
+                    <div>
+                      <strong><?= cm_h($update['title']) ?></strong>
+                      <div class="cm-muted">
+                        <?= cm_h(cm_operational_update_type_label((string)$update['update_type'])) ?>
+                        <?php if ($update['created_by_name']): ?> - <?= cm_h($update['created_by_name']) ?><?php endif; ?>
+                      </div>
+                    </div>
+                    <div class="cm-task-card-badges">
+                      <span class="cm-status-badge <?= (int)$update['owner_visible'] ? 'is-live' : 'is-draft' ?>"><?= (int)$update['owner_visible'] ? 'Owner visibile' : 'Interno' ?></span>
+                    </div>
+                  </div>
+
+                  <div class="cm-task-meta">
+                    <span>Data evento: <?= cm_h($update['happened_at'] ? cm_fmt_datetime((string)$update['happened_at']) : cm_fmt_datetime((string)$update['created_at'])) ?></span>
+                    <?php if ($contextLabel !== ''): ?>
+                      <span><?= cm_h($contextLabel) ?></span>
+                    <?php endif; ?>
+                  </div>
+
+                  <?php if ($update['body']): ?>
+                    <div class="cm-richtext"><?= nl2br(cm_h((string)$update['body'])) ?></div>
+                  <?php endif; ?>
+                </article>
+              <?php endforeach; ?>
+            </div>
+          <?php else: ?>
+            <div class="cm-owner-empty">Nessun aggiornamento operativo registrato per questo immobile.</div>
+          <?php endif; ?>
         </article>
       </section>
     </section>

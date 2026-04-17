@@ -251,6 +251,79 @@ function cm_active_booking_statuses(): array {
   return ['pending', 'confirmed', 'blocked'];
 }
 
+function cm_task_types(): array {
+  return [
+    'cleaning' => 'Pulizia',
+    'maintenance' => 'Manutenzione',
+    'checkin' => 'Check-in',
+    'checkout' => 'Check-out',
+    'guest' => 'Richiesta ospite',
+    'general' => 'Operativo',
+  ];
+}
+
+function cm_task_statuses(): array {
+  return [
+    'open' => 'Aperto',
+    'in_progress' => 'In corso',
+    'done' => 'Completato',
+    'cancelled' => 'Annullato',
+  ];
+}
+
+function cm_active_task_statuses(): array {
+  return ['open', 'in_progress'];
+}
+
+function cm_task_priorities(): array {
+  return [
+    'low' => 'Bassa',
+    'normal' => 'Normale',
+    'high' => 'Alta',
+    'urgent' => 'Urgente',
+  ];
+}
+
+function cm_task_type_label(string $taskType): string {
+  $map = cm_task_types();
+  return $map[$taskType] ?? $taskType;
+}
+
+function cm_task_status_label(string $status): string {
+  $map = cm_task_statuses();
+  return $map[$status] ?? $status;
+}
+
+function cm_task_priority_label(string $priority): string {
+  $map = cm_task_priorities();
+  return $map[$priority] ?? $priority;
+}
+
+function cm_task_status_badge_class(string $status): string {
+  return match ($status) {
+    'done' => 'is-live',
+    'in_progress' => 'is-warning',
+    default => 'is-draft',
+  };
+}
+
+function cm_operational_update_types(): array {
+  return [
+    'daily' => 'Aggiornamento',
+    'cleaning' => 'Pulizia',
+    'maintenance' => 'Manutenzione',
+    'guest' => 'Ospite',
+    'checkin' => 'Check-in',
+    'checkout' => 'Check-out',
+    'issue' => 'Criticita',
+  ];
+}
+
+function cm_operational_update_type_label(string $updateType): string {
+  $map = cm_operational_update_types();
+  return $map[$updateType] ?? $updateType;
+}
+
 function cm_flash_set(string $type, string $message): void {
   if (session_status() !== PHP_SESSION_ACTIVE) {
     return;
@@ -316,7 +389,79 @@ function cm_ensure_column(string $table, string $column, string $definition): vo
   db()->exec("ALTER TABLE `{$table}` ADD COLUMN `{$column}` {$definition}");
 }
 
+function cm_ensure_tasks_table(): void {
+  db()->exec(
+    "CREATE TABLE IF NOT EXISTS cm_tasks (
+      id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+      property_id INT UNSIGNED NOT NULL,
+      booking_id INT UNSIGNED DEFAULT NULL,
+      created_by_user_id INT UNSIGNED DEFAULT NULL,
+      task_type VARCHAR(30) NOT NULL DEFAULT 'general',
+      status VARCHAR(30) NOT NULL DEFAULT 'open',
+      priority VARCHAR(20) NOT NULL DEFAULT 'normal',
+      title VARCHAR(190) NOT NULL,
+      details TEXT DEFAULT NULL,
+      assignee_name VARCHAR(160) DEFAULT NULL,
+      due_at DATETIME DEFAULT NULL,
+      completed_at DATETIME DEFAULT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      KEY idx_cm_tasks_property_status_due (property_id, status, due_at),
+      KEY idx_cm_tasks_booking (booking_id),
+      KEY idx_cm_tasks_status_due (status, due_at),
+      CONSTRAINT fk_cm_tasks_property
+        FOREIGN KEY (property_id) REFERENCES cm_properties(id)
+        ON DELETE CASCADE,
+      CONSTRAINT fk_cm_tasks_booking
+        FOREIGN KEY (booking_id) REFERENCES cm_bookings(id)
+        ON DELETE SET NULL,
+      CONSTRAINT fk_cm_tasks_created_by_user
+        FOREIGN KEY (created_by_user_id) REFERENCES crm_users(id)
+        ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+  );
+}
+
+function cm_ensure_operational_updates_table(): void {
+  db()->exec(
+    "CREATE TABLE IF NOT EXISTS cm_operational_updates (
+      id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+      property_id INT UNSIGNED NOT NULL,
+      booking_id INT UNSIGNED DEFAULT NULL,
+      task_id INT UNSIGNED DEFAULT NULL,
+      created_by_user_id INT UNSIGNED DEFAULT NULL,
+      update_type VARCHAR(30) NOT NULL DEFAULT 'daily',
+      owner_visible TINYINT(1) NOT NULL DEFAULT 1,
+      title VARCHAR(190) NOT NULL,
+      body TEXT DEFAULT NULL,
+      happened_at DATETIME DEFAULT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      KEY idx_cm_operational_updates_property_time (property_id, happened_at, created_at),
+      KEY idx_cm_operational_updates_booking (booking_id),
+      KEY idx_cm_operational_updates_task (task_id),
+      KEY idx_cm_operational_updates_owner_visible (owner_visible, happened_at),
+      CONSTRAINT fk_cm_operational_updates_property
+        FOREIGN KEY (property_id) REFERENCES cm_properties(id)
+        ON DELETE CASCADE,
+      CONSTRAINT fk_cm_operational_updates_booking
+        FOREIGN KEY (booking_id) REFERENCES cm_bookings(id)
+        ON DELETE SET NULL,
+      CONSTRAINT fk_cm_operational_updates_task
+        FOREIGN KEY (task_id) REFERENCES cm_tasks(id)
+        ON DELETE SET NULL,
+      CONSTRAINT fk_cm_operational_updates_created_by_user
+        FOREIGN KEY (created_by_user_id) REFERENCES crm_users(id)
+        ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+  );
+}
+
 function cm_ensure_channel_schema_upgrades(): void {
+  cm_ensure_tasks_table();
+  cm_ensure_operational_updates_table();
   cm_ensure_column('cm_properties', 'logo_image_url', 'VARCHAR(255) DEFAULT NULL');
   cm_ensure_column('cm_properties', 'hero_image_url', 'VARCHAR(255) DEFAULT NULL');
   cm_ensure_column('cm_properties', 'gallery_images', 'TEXT DEFAULT NULL');
@@ -398,6 +543,20 @@ function cm_normalize_time(string $value, string $fallback): string {
   return $dt->format('H:i:s');
 }
 
+function cm_normalize_datetime_or_null(mixed $value): ?string {
+  $value = trim((string)$value);
+  if ($value === '') {
+    return null;
+  }
+
+  $dt = date_create_immutable($value);
+  if (!$dt) {
+    throw new InvalidArgumentException('Data e ora non valide.');
+  }
+
+  return $dt->format('Y-m-d H:i:s');
+}
+
 function cm_date_diff_nights(string $checkin, string $checkout): int {
   $start = new DateTimeImmutable($checkin);
   $end = new DateTimeImmutable($checkout);
@@ -475,6 +634,704 @@ function cm_recent_bookings(int $limit = 25, ?int $propertyId = null): array {
   $st = db()->prepare($sql);
   $st->execute($params);
   return $st->fetchAll() ?: [];
+}
+
+function cm_owner_dashboard_summary(int $clientId = 0, int $lookaheadDays = 14): array {
+  $clientId = max(0, $clientId);
+  $lookaheadDays = max(1, $lookaheadDays);
+  $today = new DateTimeImmutable('today');
+  $lookaheadDate = $today->modify('+' . $lookaheadDays . ' days')->format('Y-m-d');
+  $monthStart = $today->modify('first day of this month')->format('Y-m-d');
+  $monthEnd = $today->modify('last day of this month')->format('Y-m-d');
+
+  $propertySql = 'SELECT COUNT(*) AS properties,
+                         SUM(CASE WHEN p.published = 1 THEN 1 ELSE 0 END) AS published_properties,
+                         SUM(CASE WHEN p.direct_booking_enabled = 1 THEN 1 ELSE 0 END) AS direct_enabled_properties
+                  FROM cm_properties p';
+  $propertyParams = [];
+  if ($clientId > 0) {
+    $propertySql .= ' WHERE p.client_id = ?';
+    $propertyParams[] = $clientId;
+  }
+  $propertySt = db()->prepare($propertySql);
+  $propertySt->execute($propertyParams);
+  $propertyStats = $propertySt->fetch() ?: [];
+
+  $bookingSql = "SELECT COUNT(*) AS active_bookings,
+                        SUM(CASE
+                              WHEN b.status = 'pending'
+                               AND b.source_channel = 'direct'
+                               AND b.booking_type = 'reservation'
+                              THEN 1 ELSE 0
+                            END) AS pending_direct_requests,
+                        SUM(CASE
+                              WHEN b.checkin_date >= ?
+                               AND b.checkin_date <= ?
+                              THEN 1 ELSE 0
+                            END) AS upcoming_checkins,
+                        SUM(CASE
+                              WHEN b.checkout_date >= ?
+                               AND b.checkout_date <= ?
+                              THEN 1 ELSE 0
+                            END) AS upcoming_checkouts,
+                        SUM(CASE
+                              WHEN b.status IN ('pending', 'confirmed')
+                               AND b.total_amount > 0
+                               AND b.checkin_date >= ?
+                               AND b.checkin_date <= ?
+                              THEN b.total_amount ELSE 0
+                            END) AS tracked_revenue_month,
+                        SUM(CASE
+                              WHEN b.status IN ('pending', 'confirmed')
+                               AND b.total_amount > 0
+                               AND b.checkin_date >= ?
+                              THEN b.total_amount ELSE 0
+                            END) AS tracked_revenue_future
+                 FROM cm_bookings b
+                 INNER JOIN cm_properties p ON p.id = b.property_id
+                 WHERE b.status IN ('pending', 'confirmed', 'blocked')
+                   AND b.checkout_date > ?";
+  $bookingParams = [
+    $today->format('Y-m-d'),
+    $lookaheadDate,
+    $today->format('Y-m-d'),
+    $lookaheadDate,
+    $monthStart,
+    $monthEnd,
+    $today->format('Y-m-d'),
+    $today->format('Y-m-d'),
+  ];
+  if ($clientId > 0) {
+    $bookingSql .= ' AND p.client_id = ?';
+    $bookingParams[] = $clientId;
+  }
+  $bookingSt = db()->prepare($bookingSql);
+  $bookingSt->execute($bookingParams);
+  $bookingStats = $bookingSt->fetch() ?: [];
+
+  return [
+    'properties' => (int)($propertyStats['properties'] ?? 0),
+    'published_properties' => (int)($propertyStats['published_properties'] ?? 0),
+    'direct_enabled_properties' => (int)($propertyStats['direct_enabled_properties'] ?? 0),
+    'active_bookings' => (int)($bookingStats['active_bookings'] ?? 0),
+    'pending_direct_requests' => (int)($bookingStats['pending_direct_requests'] ?? 0),
+    'upcoming_checkins' => (int)($bookingStats['upcoming_checkins'] ?? 0),
+    'upcoming_checkouts' => (int)($bookingStats['upcoming_checkouts'] ?? 0),
+    'tracked_revenue_month' => round((float)($bookingStats['tracked_revenue_month'] ?? 0), 2),
+    'tracked_revenue_future' => round((float)($bookingStats['tracked_revenue_future'] ?? 0), 2),
+    'lookahead_days' => $lookaheadDays,
+  ];
+}
+
+function cm_owner_dashboard_channel_mix(int $clientId = 0): array {
+  $clientId = max(0, $clientId);
+  $sql = "SELECT b.source_channel,
+                 COUNT(*) AS booking_count,
+                 SUM(CASE
+                       WHEN b.status IN ('pending', 'confirmed')
+                        AND b.total_amount > 0
+                       THEN b.total_amount ELSE 0
+                     END) AS tracked_revenue
+          FROM cm_bookings b
+          INNER JOIN cm_properties p ON p.id = b.property_id
+          WHERE b.status IN ('pending', 'confirmed', 'blocked')
+            AND b.checkout_date > CURDATE()";
+  $params = [];
+  if ($clientId > 0) {
+    $sql .= ' AND p.client_id = ?';
+    $params[] = $clientId;
+  }
+  $sql .= ' GROUP BY b.source_channel
+            ORDER BY booking_count DESC, b.source_channel ASC';
+
+  $st = db()->prepare($sql);
+  $st->execute($params);
+  return $st->fetchAll() ?: [];
+}
+
+function cm_owner_dashboard_properties(int $clientId = 0): array {
+  $clientId = max(0, $clientId);
+  $today = new DateTimeImmutable('today');
+  $monthStart = $today->modify('first day of this month')->format('Y-m-d');
+  $monthEnd = $today->modify('last day of this month')->format('Y-m-d');
+
+  $sql = "SELECT p.*,
+                 c.name AS client_name,
+                 (SELECT COUNT(*)
+                  FROM cm_bookings b
+                  WHERE b.property_id = p.id
+                    AND b.status IN ('pending', 'confirmed', 'blocked')
+                    AND b.checkout_date > CURDATE()) AS active_booking_count,
+                 (SELECT MIN(b.checkin_date)
+                  FROM cm_bookings b
+                  WHERE b.property_id = p.id
+                    AND b.status IN ('pending', 'confirmed', 'blocked')
+                    AND b.checkin_date >= CURDATE()) AS next_checkin_date,
+                 (SELECT MIN(b.checkout_date)
+                  FROM cm_bookings b
+                  WHERE b.property_id = p.id
+                    AND b.status IN ('pending', 'confirmed', 'blocked')
+                    AND b.checkout_date >= CURDATE()) AS next_checkout_date,
+                 (SELECT COUNT(*)
+                 FROM cm_bookings b
+                  WHERE b.property_id = p.id
+                    AND b.status = 'pending'
+                    AND b.source_channel = 'direct'
+                    AND b.booking_type = 'reservation'
+                    AND b.checkout_date > CURDATE()) AS pending_direct_count,
+                 (SELECT COUNT(*)
+                  FROM cm_tasks t
+                  WHERE t.property_id = p.id
+                    AND t.status IN ('open', 'in_progress')) AS active_task_count,
+                 (SELECT COUNT(*)
+                  FROM cm_tasks t
+                  WHERE t.property_id = p.id
+                    AND t.status IN ('open', 'in_progress')
+                    AND t.due_at IS NOT NULL
+                    AND t.due_at < NOW()) AS overdue_task_count,
+                 (SELECT COALESCE(SUM(b.total_amount), 0)
+                  FROM cm_bookings b
+                  WHERE b.property_id = p.id
+                    AND b.status IN ('pending', 'confirmed')
+                    AND b.total_amount > 0
+                    AND b.checkin_date >= ?
+                    AND b.checkin_date <= ?) AS tracked_revenue_month
+          FROM cm_properties p
+          INNER JOIN cm_clients c ON c.id = p.client_id";
+  $params = [$monthStart, $monthEnd];
+  if ($clientId > 0) {
+    $sql .= ' WHERE p.client_id = ?';
+    $params[] = $clientId;
+  }
+  $sql .= ' ORDER BY p.published DESC, p.name ASC';
+
+  $st = db()->prepare($sql);
+  $st->execute($params);
+  return $st->fetchAll() ?: [];
+}
+
+function cm_owner_dashboard_upcoming_bookings(int $clientId = 0, int $limit = 12): array {
+  $clientId = max(0, $clientId);
+  $limit = max(1, $limit);
+
+  $sql = "SELECT b.*, p.name AS property_name, p.slug AS property_slug, c.name AS client_name
+          FROM cm_bookings b
+          INNER JOIN cm_properties p ON p.id = b.property_id
+          INNER JOIN cm_clients c ON c.id = p.client_id
+          WHERE b.status IN ('pending', 'confirmed', 'blocked')
+            AND b.checkout_date > CURDATE()";
+  $params = [];
+  if ($clientId > 0) {
+    $sql .= ' AND p.client_id = ?';
+    $params[] = $clientId;
+  }
+  $sql .= ' ORDER BY b.checkin_date ASC, b.id ASC
+            LIMIT ' . $limit;
+
+  $st = db()->prepare($sql);
+  $st->execute($params);
+  return $st->fetchAll() ?: [];
+}
+
+function cm_owner_dashboard_pending_requests(int $clientId = 0, int $limit = 8): array {
+  $clientId = max(0, $clientId);
+  $limit = max(1, $limit);
+
+  $sql = "SELECT b.*, p.name AS property_name, p.slug AS property_slug, c.name AS client_name
+          FROM cm_bookings b
+          INNER JOIN cm_properties p ON p.id = b.property_id
+          INNER JOIN cm_clients c ON c.id = p.client_id
+          WHERE b.status = 'pending'
+            AND b.source_channel = 'direct'
+            AND b.booking_type = 'reservation'
+            AND b.checkout_date > CURDATE()";
+  $params = [];
+  if ($clientId > 0) {
+    $sql .= ' AND p.client_id = ?';
+    $params[] = $clientId;
+  }
+  $sql .= ' ORDER BY b.checkin_date ASC, b.created_at DESC
+            LIMIT ' . $limit;
+
+  $st = db()->prepare($sql);
+  $st->execute($params);
+  return $st->fetchAll() ?: [];
+}
+
+function cm_task(int $id): ?array {
+  $st = db()->prepare(
+    "SELECT t.*,
+            p.name AS property_name,
+            c.name AS client_name,
+            b.summary AS booking_summary,
+            b.guest_name AS booking_guest_name,
+            b.checkin_date AS booking_checkin_date,
+            b.checkout_date AS booking_checkout_date,
+            u.name AS created_by_name
+     FROM cm_tasks t
+     INNER JOIN cm_properties p ON p.id = t.property_id
+     INNER JOIN cm_clients c ON c.id = p.client_id
+     LEFT JOIN cm_bookings b ON b.id = t.booking_id
+     LEFT JOIN crm_users u ON u.id = t.created_by_user_id
+     WHERE t.id = ?
+     LIMIT 1"
+  );
+  $st->execute([$id]);
+  $row = $st->fetch();
+  return $row ?: null;
+}
+
+function cm_property_task_summary(int $propertyId): array {
+  $st = db()->prepare(
+    "SELECT SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open_tasks,
+            SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_tasks,
+            SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) AS done_tasks,
+            SUM(CASE
+                  WHEN status IN ('open', 'in_progress')
+                   AND due_at IS NOT NULL
+                   AND due_at < NOW()
+                  THEN 1 ELSE 0
+                END) AS overdue_tasks
+     FROM cm_tasks
+     WHERE property_id = ?"
+  );
+  $st->execute([$propertyId]);
+  $row = $st->fetch() ?: [];
+
+  return [
+    'open_tasks' => (int)($row['open_tasks'] ?? 0),
+    'in_progress_tasks' => (int)($row['in_progress_tasks'] ?? 0),
+    'done_tasks' => (int)($row['done_tasks'] ?? 0),
+    'overdue_tasks' => (int)($row['overdue_tasks'] ?? 0),
+  ];
+}
+
+function cm_owner_dashboard_task_summary(int $clientId = 0, int $lookaheadDays = 7): array {
+  $clientId = max(0, $clientId);
+  $lookaheadDays = max(1, $lookaheadDays);
+  $until = (new DateTimeImmutable('now'))->modify('+' . $lookaheadDays . ' days')->format('Y-m-d H:i:s');
+
+  $sql = "SELECT SUM(CASE WHEN t.status = 'open' THEN 1 ELSE 0 END) AS open_tasks,
+                 SUM(CASE WHEN t.status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_tasks,
+                 SUM(CASE
+                       WHEN t.status IN ('open', 'in_progress')
+                        AND t.due_at IS NOT NULL
+                        AND t.due_at < NOW()
+                       THEN 1 ELSE 0
+                     END) AS overdue_tasks,
+                 SUM(CASE
+                       WHEN t.status IN ('open', 'in_progress')
+                        AND t.due_at IS NOT NULL
+                        AND t.due_at >= NOW()
+                        AND t.due_at <= ?
+                       THEN 1 ELSE 0
+                     END) AS due_soon_tasks
+          FROM cm_tasks t
+          INNER JOIN cm_properties p ON p.id = t.property_id
+          WHERE 1=1";
+  $params = [$until];
+  if ($clientId > 0) {
+    $sql .= ' AND p.client_id = ?';
+    $params[] = $clientId;
+  }
+
+  $st = db()->prepare($sql);
+  $st->execute($params);
+  $row = $st->fetch() ?: [];
+
+  return [
+    'open_tasks' => (int)($row['open_tasks'] ?? 0),
+    'in_progress_tasks' => (int)($row['in_progress_tasks'] ?? 0),
+    'overdue_tasks' => (int)($row['overdue_tasks'] ?? 0),
+    'due_soon_tasks' => (int)($row['due_soon_tasks'] ?? 0),
+    'lookahead_days' => $lookaheadDays,
+  ];
+}
+
+function cm_property_tasks(int $propertyId, int $limit = 30): array {
+  $limit = max(1, $limit);
+  $st = db()->prepare(
+    "SELECT t.*,
+            b.summary AS booking_summary,
+            b.guest_name AS booking_guest_name,
+            b.checkin_date AS booking_checkin_date,
+            b.checkout_date AS booking_checkout_date,
+            u.name AS created_by_name
+     FROM cm_tasks t
+     LEFT JOIN cm_bookings b ON b.id = t.booking_id
+     LEFT JOIN crm_users u ON u.id = t.created_by_user_id
+     WHERE t.property_id = ?
+     ORDER BY CASE
+                WHEN t.status = 'open' THEN 0
+                WHEN t.status = 'in_progress' THEN 1
+                WHEN t.status = 'done' THEN 2
+                ELSE 3
+              END ASC,
+              CASE WHEN t.due_at IS NULL THEN 1 ELSE 0 END ASC,
+              t.due_at ASC,
+              t.created_at DESC
+     LIMIT {$limit}"
+  );
+  $st->execute([$propertyId]);
+  return $st->fetchAll() ?: [];
+}
+
+function cm_owner_dashboard_tasks(int $clientId = 0, int $limit = 10): array {
+  $clientId = max(0, $clientId);
+  $limit = max(1, $limit);
+  $sql = "SELECT t.*,
+                 p.name AS property_name,
+                 c.name AS client_name,
+                 b.summary AS booking_summary,
+                 b.guest_name AS booking_guest_name,
+                 b.checkin_date AS booking_checkin_date,
+                 b.checkout_date AS booking_checkout_date
+          FROM cm_tasks t
+          INNER JOIN cm_properties p ON p.id = t.property_id
+          INNER JOIN cm_clients c ON c.id = p.client_id
+          LEFT JOIN cm_bookings b ON b.id = t.booking_id
+          WHERE t.status IN ('open', 'in_progress')";
+  $params = [];
+  if ($clientId > 0) {
+    $sql .= ' AND p.client_id = ?';
+    $params[] = $clientId;
+  }
+  $sql .= " ORDER BY CASE
+                      WHEN t.status = 'open' THEN 0
+                      WHEN t.status = 'in_progress' THEN 1
+                      WHEN t.status = 'done' THEN 2
+                      ELSE 3
+                    END ASC,
+                    CASE WHEN t.due_at IS NULL THEN 1 ELSE 0 END ASC,
+                    t.due_at ASC,
+                    t.created_at DESC
+            LIMIT {$limit}";
+
+  $st = db()->prepare($sql);
+  $st->execute($params);
+  return $st->fetchAll() ?: [];
+}
+
+function cm_save_task(array $input, ?int $createdByUserId = null): int {
+  $propertyId = cm_int_value($input['property_id'] ?? 0);
+  $property = cm_property($propertyId);
+  if (!$property) {
+    throw new InvalidArgumentException('Immobile non valido per la task.');
+  }
+
+  $taskType = trim((string)($input['task_type'] ?? 'general'));
+  if (!array_key_exists($taskType, cm_task_types())) {
+    throw new InvalidArgumentException('Tipo task non valido.');
+  }
+
+  $priority = trim((string)($input['priority'] ?? 'normal'));
+  if (!array_key_exists($priority, cm_task_priorities())) {
+    throw new InvalidArgumentException('Priorita task non valida.');
+  }
+
+  $title = trim((string)($input['title'] ?? ''));
+  if ($title === '') {
+    throw new InvalidArgumentException('Titolo task obbligatorio.');
+  }
+
+  $bookingId = cm_int_value($input['booking_id'] ?? 0);
+  if ($bookingId > 0) {
+    $booking = db()->prepare('SELECT id, property_id FROM cm_bookings WHERE id = ? LIMIT 1');
+    $booking->execute([$bookingId]);
+    $bookingRow = $booking->fetch();
+    if (!$bookingRow || (int)$bookingRow['property_id'] !== $propertyId) {
+      throw new InvalidArgumentException('La prenotazione selezionata non appartiene a questo immobile.');
+    }
+  } else {
+    $bookingId = 0;
+  }
+
+  $dueAt = cm_normalize_datetime_or_null($input['due_at'] ?? null);
+  $details = trim((string)($input['details'] ?? '')) ?: null;
+  $assigneeName = trim((string)($input['assignee_name'] ?? '')) ?: null;
+
+  db()->prepare(
+    'INSERT INTO cm_tasks (
+       property_id, booking_id, created_by_user_id, task_type, status, priority, title, details, assignee_name, due_at
+     ) VALUES (
+       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+     )'
+  )->execute([
+    $propertyId,
+    $bookingId > 0 ? $bookingId : null,
+    $createdByUserId,
+    $taskType,
+    'open',
+    $priority,
+    $title,
+    $details,
+    $assigneeName,
+    $dueAt,
+  ]);
+
+  return (int)db()->lastInsertId();
+}
+
+function cm_update_task_status(int $taskId, string $status): void {
+  if (!array_key_exists($status, cm_task_statuses())) {
+    throw new InvalidArgumentException('Stato task non valido.');
+  }
+
+  $task = cm_task($taskId);
+  if (!$task) {
+    throw new InvalidArgumentException('Task non trovata.');
+  }
+
+  db()->prepare(
+    'UPDATE cm_tasks
+     SET status = ?, completed_at = ?
+     WHERE id = ?'
+  )->execute([
+    $status,
+    $status === 'done' ? date('Y-m-d H:i:s') : null,
+    $taskId,
+  ]);
+}
+
+function cm_save_operational_update(array $input, ?int $createdByUserId = null): int {
+  $propertyId = cm_int_value($input['property_id'] ?? 0);
+  $property = cm_property($propertyId);
+  if (!$property) {
+    throw new InvalidArgumentException('Immobile non valido per l aggiornamento.');
+  }
+
+  $updateType = trim((string)($input['update_type'] ?? 'daily'));
+  if (!array_key_exists($updateType, cm_operational_update_types())) {
+    throw new InvalidArgumentException('Tipo aggiornamento non valido.');
+  }
+
+  $title = trim((string)($input['title'] ?? ''));
+  if ($title === '') {
+    throw new InvalidArgumentException('Titolo aggiornamento obbligatorio.');
+  }
+
+  $bookingId = cm_int_value($input['booking_id'] ?? 0);
+  if ($bookingId > 0) {
+    $booking = db()->prepare('SELECT id, property_id FROM cm_bookings WHERE id = ? LIMIT 1');
+    $booking->execute([$bookingId]);
+    $bookingRow = $booking->fetch();
+    if (!$bookingRow || (int)$bookingRow['property_id'] !== $propertyId) {
+      throw new InvalidArgumentException('La prenotazione selezionata non appartiene a questo immobile.');
+    }
+  } else {
+    $bookingId = 0;
+  }
+
+  $taskId = cm_int_value($input['task_id'] ?? 0);
+  if ($taskId > 0) {
+    $task = cm_task($taskId);
+    if (!$task || (int)$task['property_id'] !== $propertyId) {
+      throw new InvalidArgumentException('La task selezionata non appartiene a questo immobile.');
+    }
+  } else {
+    $taskId = 0;
+  }
+
+  $body = trim((string)($input['body'] ?? '')) ?: null;
+  $happenedAt = cm_normalize_datetime_or_null($input['happened_at'] ?? null);
+  $ownerVisible = !empty($input['owner_visible']) ? 1 : 0;
+
+  db()->prepare(
+    'INSERT INTO cm_operational_updates (
+       property_id, booking_id, task_id, created_by_user_id, update_type, owner_visible, title, body, happened_at
+     ) VALUES (
+       ?, ?, ?, ?, ?, ?, ?, ?, ?
+     )'
+  )->execute([
+    $propertyId,
+    $bookingId > 0 ? $bookingId : null,
+    $taskId > 0 ? $taskId : null,
+    $createdByUserId,
+    $updateType,
+    $ownerVisible,
+    $title,
+    $body,
+    $happenedAt,
+  ]);
+
+  return (int)db()->lastInsertId();
+}
+
+function cm_property_operational_updates(int $propertyId, int $limit = 20, bool $ownerVisibleOnly = false): array {
+  $limit = max(1, $limit);
+  $sql = "SELECT u.*,
+                 b.summary AS booking_summary,
+                 b.guest_name AS booking_guest_name,
+                 b.checkin_date AS booking_checkin_date,
+                 b.checkout_date AS booking_checkout_date,
+                 t.title AS task_title,
+                 t.status AS task_status,
+                 cu.name AS created_by_name
+          FROM cm_operational_updates u
+          LEFT JOIN cm_bookings b ON b.id = u.booking_id
+          LEFT JOIN cm_tasks t ON t.id = u.task_id
+          LEFT JOIN crm_users cu ON cu.id = u.created_by_user_id
+          WHERE u.property_id = ?";
+  $params = [$propertyId];
+  if ($ownerVisibleOnly) {
+    $sql .= ' AND u.owner_visible = 1';
+  }
+  $sql .= " ORDER BY COALESCE(u.happened_at, u.created_at) DESC, u.id DESC
+            LIMIT {$limit}";
+
+  $st = db()->prepare($sql);
+  $st->execute($params);
+  return $st->fetchAll() ?: [];
+}
+
+function cm_owner_dashboard_operational_summary(int $clientId = 0, int $recentDays = 7): array {
+  $clientId = max(0, $clientId);
+  $recentDays = max(1, $recentDays);
+  $since = (new DateTimeImmutable('now'))->modify('-' . $recentDays . ' days')->format('Y-m-d H:i:s');
+
+  $sql = "SELECT COUNT(*) AS recent_updates,
+                 SUM(CASE WHEN u.update_type = 'issue' THEN 1 ELSE 0 END) AS issue_updates,
+                 MAX(COALESCE(u.happened_at, u.created_at)) AS last_update_at
+          FROM cm_operational_updates u
+          INNER JOIN cm_properties p ON p.id = u.property_id
+          WHERE u.owner_visible = 1
+            AND COALESCE(u.happened_at, u.created_at) >= ?";
+  $params = [$since];
+  if ($clientId > 0) {
+    $sql .= ' AND p.client_id = ?';
+    $params[] = $clientId;
+  }
+
+  $st = db()->prepare($sql);
+  $st->execute($params);
+  $row = $st->fetch() ?: [];
+
+  return [
+    'recent_updates' => (int)($row['recent_updates'] ?? 0),
+    'issue_updates' => (int)($row['issue_updates'] ?? 0),
+    'last_update_at' => $row['last_update_at'] ?? null,
+    'recent_days' => $recentDays,
+  ];
+}
+
+function cm_owner_dashboard_operational_updates(int $clientId = 0, int $limit = 8): array {
+  $clientId = max(0, $clientId);
+  $limit = max(1, $limit);
+  $sql = "SELECT u.*,
+                 p.name AS property_name,
+                 c.name AS client_name,
+                 b.summary AS booking_summary,
+                 b.guest_name AS booking_guest_name,
+                 t.title AS task_title,
+                 t.status AS task_status,
+                 cu.name AS created_by_name
+          FROM cm_operational_updates u
+          INNER JOIN cm_properties p ON p.id = u.property_id
+          INNER JOIN cm_clients c ON c.id = p.client_id
+          LEFT JOIN cm_bookings b ON b.id = u.booking_id
+          LEFT JOIN cm_tasks t ON t.id = u.task_id
+          LEFT JOIN crm_users cu ON cu.id = u.created_by_user_id
+          WHERE u.owner_visible = 1";
+  $params = [];
+  if ($clientId > 0) {
+    $sql .= ' AND p.client_id = ?';
+    $params[] = $clientId;
+  }
+  $sql .= " ORDER BY COALESCE(u.happened_at, u.created_at) DESC, u.id DESC
+            LIMIT {$limit}";
+
+  $st = db()->prepare($sql);
+  $st->execute($params);
+  return $st->fetchAll() ?: [];
+}
+
+function cm_owner_dashboard_timeline(int $clientId = 0, int $limit = 18, int $lookaheadDays = 10): array {
+  $clientId = max(0, $clientId);
+  $limit = max(1, $limit);
+  $lookaheadDays = max(1, $lookaheadDays);
+  $timeline = [];
+
+  foreach (cm_owner_dashboard_operational_updates($clientId, max($limit, 8)) as $update) {
+    $sortAt = (string)($update['happened_at'] ?: $update['created_at']);
+    $timeline[] = [
+      'kind' => 'update',
+      'sort_at' => $sortAt,
+      'title' => (string)$update['title'],
+      'meta' => trim(cm_operational_update_type_label((string)$update['update_type']) . ' - ' . (string)$update['property_name']),
+      'detail' => (string)($update['body'] ?: ''),
+      'status_class' => (string)$update['update_type'] === 'issue' ? 'is-warning' : 'is-draft',
+      'status_label' => cm_operational_update_type_label((string)$update['update_type']),
+      'href' => cm_base_url('property.php') . '?id=' . (int)$update['property_id'] . '#aggiornamenti',
+    ];
+  }
+
+  $lookaheadUntil = (new DateTimeImmutable('today'))->modify('+' . $lookaheadDays . ' days');
+  foreach (cm_owner_dashboard_upcoming_bookings($clientId, max($limit, 10)) as $booking) {
+    $checkinDate = date_create_immutable((string)$booking['checkin_date']);
+    $checkoutDate = date_create_immutable((string)$booking['checkout_date']);
+
+    if ($checkinDate && $checkinDate <= $lookaheadUntil) {
+      $timeline[] = [
+        'kind' => 'checkin',
+        'sort_at' => $checkinDate->format('Y-m-d 15:00:00'),
+        'title' => 'Check-in: ' . cm_owner_guest_label($booking),
+        'meta' => trim((string)$booking['property_name'] . ' - ' . cm_channel_label((string)$booking['source_channel'])),
+        'detail' => (int)$booking['nights'] . ' notti - ' . cm_fmt_money((float)$booking['total_amount'], (string)$booking['currency']),
+        'status_class' => cm_task_status_badge_class((string)$booking['status']),
+        'status_label' => cm_booking_status_label((string)$booking['status']),
+        'href' => cm_base_url('property.php') . '?id=' . (int)$booking['property_id'] . '#prenotazioni',
+      ];
+    }
+
+    if ($checkoutDate && $checkoutDate <= $lookaheadUntil) {
+      $timeline[] = [
+        'kind' => 'checkout',
+        'sort_at' => $checkoutDate->format('Y-m-d 10:00:00'),
+        'title' => 'Check-out: ' . cm_owner_guest_label($booking),
+        'meta' => trim((string)$booking['property_name'] . ' - ' . cm_channel_label((string)$booking['source_channel'])),
+        'detail' => 'Partenza prevista per il soggiorno in corso',
+        'status_class' => cm_task_status_badge_class((string)$booking['status']),
+        'status_label' => 'Checkout',
+        'href' => cm_base_url('property.php') . '?id=' . (int)$booking['property_id'] . '#prenotazioni',
+      ];
+    }
+  }
+
+  foreach (cm_owner_dashboard_tasks($clientId, max($limit, 10)) as $task) {
+    $sortAt = (string)($task['due_at'] ?: $task['created_at']);
+    $timeline[] = [
+      'kind' => 'task',
+      'sort_at' => $sortAt,
+      'title' => 'Task: ' . (string)$task['title'],
+      'meta' => trim((string)$task['property_name'] . ' - ' . cm_task_type_label((string)$task['task_type'])),
+      'detail' => 'Priorita ' . mb_strtolower(cm_task_priority_label((string)$task['priority'])) . ' - assegnata a ' . ((string)($task['assignee_name'] ?: 'da assegnare')),
+      'status_class' => cm_task_status_badge_class((string)$task['status']),
+      'status_label' => cm_task_status_label((string)$task['status']),
+      'href' => cm_base_url('property.php') . '?id=' . (int)$task['property_id'] . '#operativita',
+    ];
+  }
+
+  foreach (cm_owner_dashboard_pending_requests($clientId, max($limit, 6)) as $booking) {
+    $timeline[] = [
+      'kind' => 'pending_request',
+      'sort_at' => (string)$booking['created_at'],
+      'title' => 'Nuova richiesta diretta: ' . cm_owner_guest_label($booking),
+      'meta' => trim((string)$booking['property_name'] . ' - richiesta diretta'),
+      'detail' => 'Soggiorno ' . cm_fmt_date((string)$booking['checkin_date']) . ' - ' . cm_fmt_date((string)$booking['checkout_date']),
+      'status_class' => 'is-warning',
+      'status_label' => 'In attesa',
+      'href' => cm_base_url('property.php') . '?id=' . (int)$booking['property_id'] . '#prenotazioni',
+    ];
+  }
+
+  usort(
+    $timeline,
+    static function (array $left, array $right): int {
+      return strcmp((string)$right['sort_at'], (string)$left['sort_at']);
+    }
+  );
+
+  return array_slice($timeline, 0, $limit);
 }
 
 function cm_property(int $id): ?array {
