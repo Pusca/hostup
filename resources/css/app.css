@@ -1,0 +1,69 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views';
+
+@theme {
+    /* Original HostUp font: system sans stack */
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: var(--font-sans);
+
+    /* Original HostUp palette (dark tech) */
+    --color-navy-950: #0b1220; /* page background */
+    --color-navy-900: #0b1b3a;
+    --color-cyan: #11d3c5;
+    --color-blue: #1f6bff;
+    --color-blue-300: #4a8bff;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--color-navy-950);
+    color: rgba(255, 255, 255, 0.92);
+}
+
+/* Fixed radial glow background, like the original site */
+.hu-glow {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(900px 380px at 20% 10%, rgba(17, 211, 197, 0.22), transparent 55%),
+        radial-gradient(800px 380px at 85% 25%, rgba(31, 107, 255, 0.22), transparent 55%),
+        radial-gradient(900px 420px at 45% 120%, rgba(74, 139, 255, 0.15), transparent 60%);
+}
+
+/* Signature gradient (cyan -> blue) */
+.brand-gradient {
+    background: linear-gradient(135deg, #11d3c5 0%, #1f6bff 55%, #4a8bff 100%);
+}
+.text-gradient {
+    background: linear-gradient(135deg, #11d3c5 0%, #1f6bff 55%, #4a8bff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Glass panel */
+.glass {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(14px);
+}
+
+@keyframes hu-fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.hu-reveal {
+    animation: hu-fade-up 0.7s ease both;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
