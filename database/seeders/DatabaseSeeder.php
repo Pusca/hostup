@@ -15,10 +15,11 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Admin HostUp', 'password' => Hash::make('password')],
         );
 
+        // Solo dati di riferimento essenziali (no immobili demo in produzione).
+        // Per caricare i 5 immobili demo: php artisan db:seed --class=DemoSeeder
         $this->call([
             ChannelSeeder::class,
             AmenitySeeder::class,
-            DemoSeeder::class,
         ]);
     }
 }
