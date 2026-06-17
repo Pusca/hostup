@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Blocca l'accesso diretto a file sensibili
+RewriteRule ^\.env - [F,L]
+RewriteRule ^\.git(/|$) - [F,L]
+RewriteRule ^(composer\.(json|lock)|package(-lock)?\.json|artisan)$ - [F,L]
+
+# Incanala tutte le richieste dentro la cartella public/ di Laravel
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ public/$1 [L]
