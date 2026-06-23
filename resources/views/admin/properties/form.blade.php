@@ -41,6 +41,22 @@
             </div>
 
             <div class="glass rounded-2xl p-6 space-y-4">
+                <h2 class="font-bold">Media & SEO</h2>
+                <div>
+                    <label class="{{ $lbl }}">URL video tour <span class="normal-case text-white/40">(YouTube, Vimeo o link .mp4)</span></label>
+                    <input name="video_url" value="{{ old('video_url', $property->video_url) }}" placeholder="https://youtu.be/..." class="{{ $field }}">
+                </div>
+                <div>
+                    <label class="{{ $lbl }}">Titolo SEO <span class="normal-case text-white/40">(vuoto = automatico con città)</span></label>
+                    <input name="meta_title" value="{{ old('meta_title', $property->meta_title) }}" maxlength="255" class="{{ $field }}">
+                </div>
+                <div>
+                    <label class="{{ $lbl }}">Descrizione SEO <span class="normal-case text-white/40">(max ~160 caratteri)</span></label>
+                    <textarea name="meta_description" rows="2" maxlength="320" class="{{ $field }}">{{ old('meta_description', $property->meta_description) }}</textarea>
+                </div>
+            </div>
+
+            <div class="glass rounded-2xl p-6 space-y-4">
                 <h2 class="font-bold">Posizione</h2>
                 <div>
                     <label class="{{ $lbl }}">Indirizzo</label>
