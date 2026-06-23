@@ -197,9 +197,15 @@
                     <p>{{ $property->title }} si trova a <strong>{{ $property->city }}</strong>{{ $property->region ? ' (' . $property->region . ')' : '' }}, in posizione ideale per vivere il territorio: spiagge, locali e attrazioni a pochi minuti.</p>
                 @endif
             </div>
+            @php $mapQuery = collect([$property->address, $property->city, $property->region, $property->country])->filter()->implode(', '); @endphp
             @if ($property->lat && $property->lng)
-                <iframe class="mt-4 h-72 w-full rounded-2xl border border-slate-200" loading="lazy"
-                        src="https://www.openstreetmap.org/export/embed.html?bbox={{ $property->lng - 0.01 }},{{ $property->lat - 0.008 }},{{ $property->lng + 0.01 }},{{ $property->lat + 0.008 }}&marker={{ $property->lat }},{{ $property->lng }}"></iframe>
+                <iframe class="mt-4 h-72 w-full rounded-2xl border border-slate-200" loading="lazy" title="Mappa"
+                        src="https://www.openstreetmap.org/export/embed.html?bbox={{ $property->lng - 0.008 }},{{ $property->lat - 0.006 }},{{ $property->lng + 0.008 }},{{ $property->lat + 0.006 }}&layer=mapnik&marker={{ $property->lat }},{{ $property->lng }}"></iframe>
+                <a href="https://www.openstreetmap.org/?mlat={{ $property->lat }}&mlon={{ $property->lng }}#map=16/{{ $property->lat }}/{{ $property->lng }}"
+                   target="_blank" rel="noopener" class="mt-2 inline-block text-sm font-medium text-blue-600 hover:underline">Apri la mappa →</a>
+            @elseif ($mapQuery)
+                <iframe class="mt-4 h-72 w-full rounded-2xl border border-slate-200" loading="lazy" title="Mappa"
+                        src="https://www.google.com/maps?q={{ urlencode($mapQuery) }}&output=embed"></iframe>
             @endif
         </div>
     </div>

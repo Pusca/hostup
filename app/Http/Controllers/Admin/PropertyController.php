@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Amenity;
 use App\Models\Property;
 use App\Services\Availability\AvailabilityService;
+use App\Services\Geo\GeocodingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -42,7 +43,7 @@ class PropertyController extends Controller
         ]);
     }
 
-    public function store(Request $request, AvailabilityService $availability)
+    public function store(Request $request, AvailabilityService $availability, GeocodingService $geo)
     {
         $data = $this->validateData($request);
 
@@ -51,6 +52,8 @@ class PropertyController extends Controller
 
         // Generate the booking calendar so quotes/bookings work right away.
         $availability->ensureCalendar($property);
+
+        $this->geocodeIfNeeded($property, $geo);
 
         return redirect()->route('admin.properties.edit', $property)
             ->with('status', 'Immobile creato (calendario generato). Ora aggiungi le foto.');
@@ -72,14 +75,35 @@ class PropertyController extends Controller
         ]);
     }
 
-    public function update(Request $request, Property $property)
+    public function update(Request $request, Property $property, GeocodingService $geo)
     {
         $data = $this->validateData($request, $property);
 
         $property->update($data);
         $property->amenities()->sync($request->input('amenities', []));
 
+        $this->geocodeIfNeeded($property, $geo);
+
         return back()->with('status', 'Modifiche salvate.');
+    }
+
+    /**
+     * Popola lat/lng dall'indirizzo (OpenStreetMap) quando mancano o l'indirizzo è cambiato.
+     */
+    private function geocodeIfNeeded(Property $property, GeocodingService $geo): void
+    {
+        $needs = empty($property->lat) || empty($property->lng)
+            || $property->wasChanged(['address', 'city', 'region', 'country']);
+
+        if (! $needs) {
+            return;
+        }
+
+        $coords = $geo->geocodeAddress($property->address, $property->city, $property->region, $property->country);
+
+        if ($coords) {
+            $property->forceFill($coords)->saveQuietly();
+        }
     }
 
     public function destroy(Property $property)

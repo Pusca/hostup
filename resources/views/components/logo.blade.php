@@ -6,8 +6,12 @@
 <span {{ $attributes->merge(['class' => 'flex items-center gap-3']) }}>
     <span class="brand-gradient grid place-items-center rounded-[14px] shadow-lg ring-1 ring-white/20"
           style="width: {{ $badge }}px; height: {{ $badge }}px;" aria-hidden="true" title="HostUp">
-        <svg viewBox="0 0 24 24" class="fill-white opacity-95" style="width: {{ round($badge * 0.5) }}px; height: {{ round($badge * 0.5) }}px;">
-            <path d="M6.5 5.5c0-.55.45-1 1-1h2c.55 0 1 .45 1 1v4.2l3.25-3.25c.2-.2.46-.3.73-.3H17c.55 0 1 .45 1 1v11c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1V11.7l-3.25 3.25c-.2.2-.46.3-.73.3H7.5c-.55 0-1-.45-1-1v-8.8Z"/>
+        {{-- Casetta (Host) + freccia su (Up) --}}
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             class="opacity-95" style="width: {{ round($badge * 0.52) }}px; height: {{ round($badge * 0.52) }}px;">
+            <path d="M4 11 L12 4 L20 11 V19 a1 1 0 0 1 -1 1 H5 a1 1 0 0 1 -1 -1 Z"/>
+            <path d="M12 18 V11"/>
+            <path d="M9 13.5 L12 10.5 L15 13.5"/>
         </svg>
     </span>
     <span class="font-extrabold tracking-tight leading-none" style="font-size: {{ $size }}px;">

@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <title>@yield('title', 'HostUp — Affitti brevi gestiti a 360°')</title>
     <meta name="description" content="@yield('meta_description', 'Case e ville selezionate per soggiorni indimenticabili. Prenotazione diretta, nessuna commissione nascosta.')">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
