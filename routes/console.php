@@ -13,3 +13,6 @@ Schedule::command('hostup:sync-ical')
     ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Roll the booking window forward once a day.
+Schedule::command('hostup:generate-availability')->dailyAt('04:00');

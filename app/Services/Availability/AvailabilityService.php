@@ -4,10 +4,54 @@ namespace App\Services\Availability;
 
 use App\Models\Availability;
 use App\Models\Property;
+use Carbon\CarbonPeriod;
 use Illuminate\Support\Carbon;
 
 class AvailabilityService
 {
+    /**
+     * Ensure a property has an open availability row for every day in the
+     * window [today, today+$days]. Existing days are left untouched, missing
+     * ones are created as 'available' at the property's base price.
+     * Used on property creation and to roll the booking window forward.
+     *
+     * @return int number of days created
+     */
+    public function ensureCalendar(Property $property, int $days = 540): int
+    {
+        $start = Carbon::today();
+        $end = Carbon::today()->addDays($days);
+
+        $existing = $property->availability()
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->pluck('date')
+            ->map(fn ($d) => Carbon::parse($d)->toDateString())
+            ->flip();
+
+        $rows = [];
+        foreach (CarbonPeriod::create($start, $end) as $day) {
+            $key = $day->toDateString();
+            if ($existing->has($key)) {
+                continue;
+            }
+            $rows[] = [
+                'property_id' => $property->id,
+                'date' => $key,
+                'status' => 'available',
+                'price' => $property->base_price,
+                'source' => 'manual',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        foreach (array_chunk($rows, 200) as $chunk) {
+            Availability::insert($chunk);
+        }
+
+        return count($rows);
+    }
+
     /**
      * All nights in [checkIn, checkOut) — checkout day itself is not occupied.
      *

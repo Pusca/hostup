@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Amenity;
 use App\Models\Property;
+use App\Services\Availability\AvailabilityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -41,15 +42,18 @@ class PropertyController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, AvailabilityService $availability)
     {
         $data = $this->validateData($request);
 
         $property = Property::create($data);
         $property->amenities()->sync($request->input('amenities', []));
 
+        // Generate the booking calendar so quotes/bookings work right away.
+        $availability->ensureCalendar($property);
+
         return redirect()->route('admin.properties.edit', $property)
-            ->with('status', 'Immobile creato. Ora aggiungi le foto.');
+            ->with('status', 'Immobile creato (calendario generato). Ora aggiungi le foto.');
     }
 
     public function edit(Property $property)
