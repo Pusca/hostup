@@ -173,22 +173,18 @@
                 <span class="text-2xl font-bold">€{{ number_format($property->base_price, 0, ',', '.') }}</span>
                 <span class="text-slate-500">/ notte</span>
             </div>
-            <div class="mt-4 grid grid-cols-2 overflow-hidden rounded-xl border border-slate-300">
-                <label class="border-r border-slate-300 p-3">
-                    <span class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Check-in</span>
-                    <input type="date" data-role="checkin" min="{{ date('Y-m-d') }}" class="mt-1 w-full border-0 p-0 text-sm focus:ring-0">
-                </label>
-                <label class="p-3">
-                    <span class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Check-out</span>
-                    <input type="date" data-role="checkout" min="{{ date('Y-m-d') }}" class="mt-1 w-full border-0 p-0 text-sm focus:ring-0">
-                </label>
+            <div class="mt-4 rounded-xl border border-slate-300 p-3">
+                <span class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Date</span>
+                <input data-role="dates" readonly placeholder="Aggiungi le date"
+                       class="mt-1 w-full cursor-pointer border-0 bg-transparent p-0 text-sm placeholder-slate-400 focus:ring-0">
             </div>
             <label class="mt-3 block rounded-xl border border-slate-300 p-3">
                 <span class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Ospiti</span>
-                <select data-role="guests" class="mt-1 w-full border-0 p-0 text-sm focus:ring-0">
-                    @for ($g = 1; $g <= $property->max_guests; $g++)<option value="{{ $g }}" @selected($g === 2)>{{ $g }}</option>@endfor
+                <select data-role="guests" class="mt-1 w-full border-0 bg-transparent p-0 text-sm focus:ring-0">
+                    @for ($g = 1; $g <= $property->max_guests; $g++)<option value="{{ $g }}" @selected($g === 2)>{{ $g }} {{ $g === 1 ? 'ospite' : 'ospiti' }}</option>@endfor
                 </select>
             </label>
+            <input type="hidden" data-role="checkin"><input type="hidden" data-role="checkout">
 
             <p data-role="message" class="mt-3 hidden rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700"></p>
 
@@ -215,17 +211,14 @@
      style="box-shadow:0 -8px 24px rgba(0,0,0,.08)">
     <p data-role="message" class="mb-2 hidden rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700"></p>
     <div class="flex items-stretch gap-2">
-        <label class="flex-1 rounded-xl border border-slate-300 px-3 py-1.5">
-            <span class="block text-[10px] font-semibold uppercase text-slate-500">Check-in</span>
-            <input type="date" data-role="checkin" min="{{ date('Y-m-d') }}" class="w-full border-0 p-0 text-sm focus:ring-0">
+        <label class="flex-1 rounded-xl border border-slate-300 px-3 py-2">
+            <span class="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Quando</span>
+            <input data-role="dates" readonly placeholder="Aggiungi le date"
+                   class="w-full cursor-pointer border-0 bg-transparent p-0 text-sm placeholder-slate-400 focus:ring-0">
         </label>
-        <label class="flex-1 rounded-xl border border-slate-300 px-3 py-1.5">
-            <span class="block text-[10px] font-semibold uppercase text-slate-500">Check-out</span>
-            <input type="date" data-role="checkout" min="{{ date('Y-m-d') }}" class="w-full border-0 p-0 text-sm focus:ring-0">
-        </label>
-        <input type="hidden" data-role="guests" value="2">
+        <input type="hidden" data-role="checkin"><input type="hidden" data-role="checkout"><input type="hidden" data-role="guests" value="2">
         <a data-role="book" href="#"
-           class="landing-accent flex items-center whitespace-nowrap rounded-xl px-4 text-sm font-semibold text-white opacity-50 pointer-events-none">
+           class="landing-accent flex items-center whitespace-nowrap rounded-xl px-5 text-sm font-semibold text-white opacity-50 pointer-events-none">
             Prenota
         </a>
     </div>
@@ -235,7 +228,7 @@
 <script type="application/json" id="gallery-data">@json($photos->pluck('url'))</script>
 @if ($video)<script type="application/json" id="video-data">@json($video)</script>@endif
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
     const images = JSON.parse(document.getElementById('gallery-data').textContent || '[]');
     const videoEl = document.getElementById('video-data');
@@ -328,16 +321,29 @@
             book.classList.add('opacity-50', 'pointer-events-none');
         }
 
-        ci.addEventListener('change', () => {
-            if (ci.value) {
-                const n = new Date(ci.value); n.setDate(n.getDate() + 1);
-                co.min = n.toISOString().slice(0, 10);
-                if (co.value && co.value <= ci.value) co.value = co.min;
-            }
-            quote();
-        });
-        co.addEventListener('change', quote);
-        gu?.addEventListener('change', quote);
+        const datesEl = q('dates');
+        if (datesEl && window.flatpickr) {
+            window.flatpickr(datesEl, {
+                mode: 'range',
+                minDate: 'today',
+                disableMobile: true,        // calendario flatpickr anche su smartphone
+                altInput: true,
+                altFormat: 'j M',
+                dateFormat: 'Y-m-d',
+                rangeSeparator: ' → ',
+                onChange: (sel, _str, inst) => {
+                    if (sel.length === 2) {
+                        ci.value = inst.formatDate(sel[0], 'Y-m-d');
+                        co.value = inst.formatDate(sel[1], 'Y-m-d');
+                        quote();
+                    } else {
+                        ci.value = ''; co.value = '';
+                        disableBook(); res?.classList.add('hidden'); msg.classList.add('hidden');
+                    }
+                },
+            });
+        }
+        gu?.addEventListener('change', () => { if (ci.value && co.value) quote(); });
 
         async function quote() {
             if (!ci.value || !co.value) return;
@@ -358,7 +364,7 @@
             }
         }
     });
-})();
+});
 </script>
 @endpush
 @endsection

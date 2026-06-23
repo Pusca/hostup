@@ -102,3 +102,22 @@ body.landing {
             color: #fff; font-size: 14px; background: rgba(255,255,255,.12);
             padding: 6px 14px; border-radius: 9999px; }
 @media (max-width: 640px) { .lb-prev { left: 8px; } .lb-next { right: 8px; } }
+
+/* Flatpickr — accenti coordinati al tema chiaro */
+.flatpickr-calendar { border-radius: 16px; box-shadow: 0 18px 50px rgba(15,23,42,.18); font-family: inherit; }
+.flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange,
+.flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover {
+    background: #1f6bff; border-color: #1f6bff; color: #fff;
+    box-shadow: -10px 0 0 #1f6bff;
+}
+.flatpickr-day.inRange { background: #e8f0ff; border-color: #e8f0ff; box-shadow: -5px 0 0 #e8f0ff, 5px 0 0 #e8f0ff; }
+.flatpickr-day.today { border-color: #1f6bff; }
+.flatpickr-day:hover { background: #eef2f7; }
+.flatpickr-months .flatpickr-month, .flatpickr-current-month, .flatpickr-weekday { color: #0f172a; }
+.flatpickr-day.flatpickr-disabled { color: #cbd5e1; }
+/* Su mobile il calendario è più grande e leggibile */
+@media (max-width: 640px) {
+    .flatpickr-calendar { width: 92vw !important; }
+    .flatpickr-days, .flatpickr-rContainer, .dayContainer { width: 100% !important; min-width: 0 !important; max-width: none !important; }
+    .dayContainer { justify-content: space-around; }
+}
