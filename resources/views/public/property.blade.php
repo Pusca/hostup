@@ -117,7 +117,7 @@
 </section>
 
 {{-- BODY --}}
-<section class="mx-auto mt-8 grid max-w-6xl gap-10 px-4 pb-32 sm:px-6 lg:grid-cols-3 lg:pb-16">
+<section class="mx-auto mt-8 grid max-w-6xl gap-10 px-4 pb-10 sm:px-6 lg:grid-cols-3">
     {{-- LEFT --}}
     <div class="space-y-10 lg:col-span-2">
         @if ($property->description)
@@ -155,8 +155,14 @@
         @endif
 
         <div>
-            <h2 class="text-xl font-bold">Dove ti trovi</h2>
-            <p class="mt-3 text-slate-700">{{ $property->title }} si trova a <strong>{{ $property->city }}</strong>{{ $property->region ? ' (' . $property->region . ')' : '' }}, posizione ideale per il tuo soggiorno.</p>
+            <h2 class="text-xl font-bold">Scopri {{ $property->city }}</h2>
+            <div class="mt-3 leading-relaxed text-slate-700">
+                @if ($property->area_description)
+                    {!! nl2br(e($property->area_description)) !!}
+                @else
+                    <p>{{ $property->title }} si trova a <strong>{{ $property->city }}</strong>{{ $property->region ? ' (' . $property->region . ')' : '' }}, in posizione ideale per vivere il territorio: spiagge, locali e attrazioni a pochi minuti.</p>
+                @endif
+            </div>
             @if ($property->lat && $property->lng)
                 <iframe class="mt-4 h-72 w-full rounded-2xl border border-slate-200" loading="lazy"
                         src="https://www.openstreetmap.org/export/embed.html?bbox={{ $property->lng - 0.01 }},{{ $property->lat - 0.008 }},{{ $property->lng + 0.01 }},{{ $property->lat + 0.008 }}&marker={{ $property->lat }},{{ $property->lng }}"></iframe>
@@ -202,6 +208,50 @@
             <p class="mt-2 text-center text-xs text-slate-400">Seleziona le date per vedere il prezzo</p>
         </div>
     </aside>
+</section>
+
+{{-- I NOSTRI SERVIZI --}}
+<section class="border-t border-slate-200 bg-white">
+    <div class="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <h2 class="text-2xl font-bold tracking-tight">I nostri servizi</h2>
+        <p class="mt-2 max-w-2xl text-slate-600">Gestiamo l'immobile in prima persona, per un soggiorno comodo e senza pensieri.</p>
+        <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            @foreach ([
+                ['🔑', 'Self check-in', 'Arrivo autonomo e flessibile, con istruzioni dedicate.'],
+                ['🧼', 'Pulizia professionale', 'Casa igienizzata e biancheria fresca a ogni arrivo.'],
+                ['🛟', 'Assistenza dedicata', 'Ci siamo prima, durante e dopo il soggiorno.'],
+                ['📶', 'Wi-Fi veloce', 'Connessione adatta anche allo smart working.'],
+            ] as [$ic, $t, $d])
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <div class="text-2xl">{{ $ic }}</div>
+                    <h3 class="mt-3 font-semibold">{{ $t }}</h3>
+                    <p class="mt-1 text-sm text-slate-600">{{ $d }}</p>
+                </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+
+{{-- PERCHÉ PRENOTARE DIRETTO --}}
+<section class="border-t border-slate-200 pb-28 lg:pb-14">
+    <div class="mx-auto max-w-6xl px-4 pt-14 sm:px-6">
+        <h2 class="text-2xl font-bold tracking-tight">Perché prenotare diretto</h2>
+        <div class="mt-8 grid gap-6 sm:grid-cols-3">
+            @foreach ([
+                ['Miglior prezzo', 'Nessuna commissione di intermediazione: paghi solo il soggiorno.'],
+                ['Contatto diretto', 'Parli direttamente con chi gestisce la casa, senza filtri.'],
+                ['Prenotazione sicura', 'Pagamento protetto e conferma immediata.'],
+            ] as [$t, $d])
+                <div class="flex gap-3">
+                    <span class="landing-accent mt-0.5 grid h-7 w-7 flex-none place-items-center rounded-full text-sm text-white">✓</span>
+                    <div>
+                        <h3 class="font-semibold">{{ $t }}</h3>
+                        <p class="mt-1 text-sm text-slate-600">{{ $d }}</p>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
 </section>
 
 {{-- STICKY BOTTOM BAR (mobile) --}}

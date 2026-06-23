@@ -102,6 +102,7 @@ class PropertyController extends Controller
             'video_url' => ['nullable', 'string', 'max:255'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:320'],
+            'area_description' => ['nullable', 'string', 'max:5000'],
             'address' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:120'],
             'region' => ['nullable', 'string', 'max:120'],

@@ -67,6 +67,10 @@
                     <div><label class="{{ $lbl }}">Regione</label><input name="region" value="{{ old('region', $property->region) }}" class="{{ $field }}"></div>
                     <div><label class="{{ $lbl }}">Paese</label><input name="country" maxlength="2" value="{{ old('country', $property->country) }}" class="{{ $field }}"></div>
                 </div>
+                <div>
+                    <label class="{{ $lbl }}">Descrizione della zona <span class="normal-case text-white/40">(spiaggia, attrazioni, distanze — mostrata in pagina e utile alla SEO locale)</span></label>
+                    <textarea name="area_description" rows="4" class="{{ $field }}">{{ old('area_description', $property->area_description) }}</textarea>
+                </div>
             </div>
 
             <div class="glass rounded-2xl p-6">

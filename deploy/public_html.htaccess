@@ -6,5 +6,7 @@ RewriteRule ^\.git(/|$) - [F,L]
 RewriteRule ^(composer\.(json|lock)|package(-lock)?\.json|artisan)$ - [F,L]
 
 # Incanala tutte le richieste dentro la cartella public/ di Laravel
+# (eccetto /media, cartella di file statici serviti direttamente)
 RewriteCond %{REQUEST_URI} !^/public/
+RewriteCond %{REQUEST_URI} !^/media/
 RewriteRule ^(.*)$ public/$1 [L]
