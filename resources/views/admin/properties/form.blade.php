@@ -18,7 +18,7 @@
         @endif
     </div>
 
-    <form method="post" action="{{ $property->exists ? route('admin.properties.update', $property) : route('admin.properties.store') }}" class="mt-6 grid gap-6 lg:grid-cols-3">
+    <form method="post" enctype="multipart/form-data" action="{{ $property->exists ? route('admin.properties.update', $property) : route('admin.properties.store') }}" class="mt-6 grid gap-6 lg:grid-cols-3">
         @csrf
         @if ($property->exists) @method('PUT') @endif
 
@@ -42,6 +42,14 @@
 
             <div class="glass rounded-2xl p-6 space-y-4">
                 <h2 class="font-bold">Media & SEO</h2>
+                <div>
+                    <label class="{{ $lbl }}">Logo immobile <span class="normal-case text-white/40">(SVG/PNG, opzionale)</span></label>
+                    @if ($property->logo_url)
+                        <img src="{{ $property->logo_url }}" alt="logo" class="my-2 h-10 w-auto rounded bg-white p-1">
+                    @endif
+                    <input type="file" name="logo" accept="image/svg+xml,image/png,image/jpeg,image/webp"
+                           class="mt-1 w-full text-sm text-white/70 file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white">
+                </div>
                 <div>
                     <label class="{{ $lbl }}">URL video tour <span class="normal-case text-white/40">(YouTube, Vimeo o link .mp4)</span></label>
                     <input name="video_url" value="{{ old('video_url', $property->video_url) }}" placeholder="https://youtu.be/..." class="{{ $field }}">

@@ -54,6 +54,7 @@ class PropertyController extends Controller
         $availability->ensureCalendar($property);
 
         $this->geocodeIfNeeded($property, $geo);
+        $this->handleLogo($request, $property);
 
         return redirect()->route('admin.properties.edit', $property)
             ->with('status', 'Immobile creato (calendario generato). Ora aggiungi le foto.');
@@ -83,8 +84,31 @@ class PropertyController extends Controller
         $property->amenities()->sync($request->input('amenities', []));
 
         $this->geocodeIfNeeded($property, $geo);
+        $this->handleLogo($request, $property);
 
         return back()->with('status', 'Modifiche salvate.');
+    }
+
+    /**
+     * Carica/aggiorna il logo dell'immobile (SVG/PNG/JPG/WEBP).
+     */
+    private function handleLogo(Request $request, Property $property): void
+    {
+        if (! $request->hasFile('logo')) {
+            return;
+        }
+
+        $request->validate(['logo' => ['file', 'mimes:svg,png,jpg,jpeg,webp', 'max:2048']]);
+
+        // Rimuovi il vecchio logo se era un file caricato (non un path public/ o URL)
+        if ($property->logo_path
+            && ! str_starts_with($property->logo_path, 'http')
+            && ! str_starts_with($property->logo_path, '/')) {
+            Storage::disk('public')->delete($property->logo_path);
+        }
+
+        $path = $request->file('logo')->store('properties/' . $property->slug, 'public');
+        $property->forceFill(['logo_path' => $path])->saveQuietly();
     }
 
     /**

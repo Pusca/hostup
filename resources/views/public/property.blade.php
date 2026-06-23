@@ -76,8 +76,12 @@
 <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/85 backdrop-blur">
     <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <div class="min-w-0">
-            <div class="truncate text-base font-semibold">{{ $property->title }}</div>
-            <div class="truncate text-xs text-slate-500">📍 {{ $location }}</div>
+            @if ($property->logo_url)
+                <img src="{{ $property->logo_url }}" alt="{{ $property->title }}" class="h-10 w-auto sm:h-11">
+            @else
+                <div class="truncate text-base font-semibold">{{ $property->title }}</div>
+                <div class="truncate text-xs text-slate-500">📍 {{ $location }}</div>
+            @endif
         </div>
         <a href="#prenota" class="landing-accent rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110">
             Prenota

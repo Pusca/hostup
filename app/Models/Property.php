@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Property extends Model
@@ -105,6 +106,20 @@ class Property extends Model
     public function locationLabel(): string
     {
         return collect([$this->city, $this->region])->filter()->implode(', ');
+    }
+
+    /* ---- Logo immobile -------------------------------------------------- */
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (! $this->logo_path) {
+            return null;
+        }
+        if (str_starts_with($this->logo_path, 'http') || str_starts_with($this->logo_path, '/')) {
+            return $this->logo_path;
+        }
+
+        return Storage::disk('public')->url($this->logo_path);
     }
 
     /* ---- Video tour ----------------------------------------------------- */

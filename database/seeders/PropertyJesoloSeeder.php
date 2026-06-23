@@ -19,6 +19,7 @@ class PropertyJesoloSeeder extends Seeder
             [
                 'title' => 'Villa Pineta 161',
                 'subtitle' => 'Jesolo · immersa nella pineta, a due passi dal mare',
+                'logo_path' => '/brand/villa-pineta-161.svg',
                 'type' => 'villa',
                 'status' => 'published',
                 'address' => 'Viale Belgio 161',
