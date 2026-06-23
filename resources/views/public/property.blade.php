@@ -30,6 +30,29 @@
         ])->values()->all(),
         'priceRange' => '€€',
     ]);
+
+    $hasParking = $property->amenities->contains('slug', 'parcheggio-gratuito');
+    $hasPets = $property->amenities->contains('slug', 'animali-ammessi');
+    $ciTime = $property->check_in_time ?: '16:00';
+    $coTime = $property->check_out_time ?: '10:00';
+
+    $faqs = [
+        ["Quanti ospiti può ospitare {$property->title}?", "Fino a {$property->max_guests} ospiti, con {$property->bedrooms} camere e {$property->bathrooms} bagno/i."],
+        ['A che ora sono il check-in e il check-out?', "Check-in dalle {$ciTime}, check-out entro le {$coTime}. Il check-in è autonomo (self check-in)."],
+        ['È disponibile il parcheggio?', $hasParking ? "Sì, l'immobile dispone di parcheggio privato all'interno della proprietà." : 'Contattaci per informazioni sul parcheggio in zona.'],
+        ['Sono ammessi gli animali?', $hasPets ? 'Sì, gli animali domestici sono i benvenuti.' : 'Contattaci prima di prenotare per valutare la presenza di animali.'],
+        ['Come funziona la prenotazione diretta?', 'Selezioni le date, vedi subito il prezzo e prenoti online con pagamento sicuro: nessuna commissione di intermediazione.'],
+    ];
+
+    $faqLd = [
+        '@context' => 'https://schema.org',
+        '@type' => 'FAQPage',
+        'mainEntity' => array_map(fn ($f) => [
+            '@type' => 'Question',
+            'name' => $f[0],
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]],
+        ], $faqs),
+    ];
 @endphp
 
 @section('title', $property->metaTitle())
@@ -44,6 +67,7 @@
     @if ($cover)<meta property="og:image" content="{{ $cover->url }}">@endif
     <meta name="twitter:card" content="summary_large_image">
     <script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! json_encode($faqLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
 @endpush
 
 @section('content')
@@ -114,6 +138,16 @@
             </span>
         @endforeach
     </div>
+
+    @if ($property->amenities->isNotEmpty())
+        <div class="no-scrollbar mt-4 flex gap-2 overflow-x-auto pb-1">
+            @foreach ($property->amenities->take(8) as $a)
+                <span class="flex flex-none items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm">
+                    <span>{{ $a->icon }}</span>{{ $a->name }}
+                </span>
+            @endforeach
+        </div>
+    @endif
 </section>
 
 {{-- BODY --}}
@@ -194,11 +228,10 @@
 
             <p data-role="message" class="mt-3 hidden rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700"></p>
 
-            <div data-role="result" class="mt-4 hidden border-t border-slate-200 pt-4">
-                <div class="flex items-baseline justify-between">
-                    <span class="text-slate-600">Totale</span>
-                    <span class="text-xl font-bold" data-role="total"></span>
-                </div>
+            <div data-role="result" class="mt-4 hidden space-y-2 border-t border-slate-200 pt-4 text-sm">
+                <div class="flex justify-between"><span class="text-slate-600" data-role="nightsLabel"></span><span data-role="accommodation"></span></div>
+                <div class="flex justify-between"><span class="text-slate-600">Pulizia finale</span><span data-role="cleaning"></span></div>
+                <div class="flex justify-between border-t border-slate-200 pt-2 text-base font-bold"><span>Totale</span><span data-role="total"></span></div>
             </div>
 
             <a data-role="book" href="#"
@@ -233,8 +266,8 @@
 </section>
 
 {{-- PERCHÉ PRENOTARE DIRETTO --}}
-<section class="border-t border-slate-200 pb-28 lg:pb-14">
-    <div class="mx-auto max-w-6xl px-4 pt-14 sm:px-6">
+<section class="border-t border-slate-200">
+    <div class="mx-auto max-w-6xl px-4 py-14 sm:px-6">
         <h2 class="text-2xl font-bold tracking-tight">Perché prenotare diretto</h2>
         <div class="mt-8 grid gap-6 sm:grid-cols-3">
             @foreach ([
@@ -249,6 +282,24 @@
                         <p class="mt-1 text-sm text-slate-600">{{ $d }}</p>
                     </div>
                 </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+
+{{-- FAQ --}}
+<section class="border-t border-slate-200 bg-white pb-28 lg:pb-16">
+    <div class="mx-auto max-w-3xl px-4 pt-14 sm:px-6">
+        <h2 class="text-2xl font-bold tracking-tight">Domande frequenti</h2>
+        <div class="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200">
+            @foreach ($faqs as $f)
+                <details class="group px-5">
+                    <summary class="flex cursor-pointer list-none items-center justify-between py-4 font-medium [&::-webkit-details-marker]:hidden">
+                        <span>{{ $f[0] }}</span>
+                        <svg class="h-5 w-5 flex-none text-slate-400 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    </summary>
+                    <p class="pb-4 text-slate-600">{{ $f[1] }}</p>
+                </details>
             @endforeach
         </div>
     </div>
@@ -406,6 +457,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
                 const d = await r.json();
                 if (!d.ok) { disableBook(); res?.classList.add('hidden'); msg.textContent = d.error; msg.classList.remove('hidden'); return; }
+                const nl = q('nightsLabel'), acc = q('accommodation'), cl = q('cleaning');
+                if (nl) nl.textContent = d.quote.nights + (d.quote.nights === 1 ? ' notte' : ' notti');
+                if (acc) acc.textContent = fmt(d.quote.accommodation);
+                if (cl) cl.textContent = fmt(d.quote.cleaning_fee);
                 if (tot) tot.textContent = fmt(d.quote.total);
                 res?.classList.remove('hidden');
                 enableBook();

@@ -17,8 +17,8 @@ class PropertyJesoloSeeder extends Seeder
         $property = Property::updateOrCreate(
             ['slug' => 'villa-pineta-jesolo'],
             [
-                'title' => 'Villa nella Pineta — Jesolo',
-                'subtitle' => 'Immersa tra i pini marittimi, a due passi dal mare',
+                'title' => 'Villa Pineta 161',
+                'subtitle' => 'Jesolo · immersa nella pineta, a due passi dal mare',
                 'type' => 'villa',
                 'status' => 'published',
                 'address' => 'Viale Belgio 161',
