@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+﻿@import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -10,12 +10,12 @@
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-display: var(--font-sans);
 
-    /* Original HostUp palette (dark tech) */
+    /* HostUp palette — allineata all'icona ufficiale (blu/azzurro) */
     --color-navy-950: #0b1220; /* page background */
     --color-navy-900: #0b1b3a;
-    --color-cyan: #11d3c5;
-    --color-blue: #1f6bff;
-    --color-blue-300: #4a8bff;
+    --color-cyan: #4d9df8; /* accento chiaro (storicamente "cyan", ora azzurro icona) */
+    --color-blue: #2b66e8;
+    --color-blue-300: #57a2f7;
 }
 
 html {
@@ -34,17 +34,17 @@ body {
     z-index: -1;
     pointer-events: none;
     background:
-        radial-gradient(900px 380px at 20% 10%, rgba(17, 211, 197, 0.22), transparent 55%),
-        radial-gradient(800px 380px at 85% 25%, rgba(31, 107, 255, 0.22), transparent 55%),
-        radial-gradient(900px 420px at 45% 120%, rgba(74, 139, 255, 0.15), transparent 60%);
+        radial-gradient(900px 380px at 20% 10%, rgba(87, 162, 247, 0.2), transparent 55%),
+        radial-gradient(800px 380px at 85% 25%, rgba(43, 102, 232, 0.22), transparent 55%),
+        radial-gradient(900px 420px at 45% 120%, rgba(77, 157, 248, 0.15), transparent 60%);
 }
 
-/* Signature gradient (cyan -> blue) */
+/* Signature gradient — stesso dell'icona (azzurro -> blu) */
 .brand-gradient {
-    background: linear-gradient(135deg, #11d3c5 0%, #1f6bff 55%, #4a8bff 100%);
+    background: linear-gradient(160deg, #57a2f7 0%, #3f87f5 45%, #2b66e8 100%);
 }
 .text-gradient {
-    background: linear-gradient(135deg, #11d3c5 0%, #1f6bff 55%, #4a8bff 100%);
+    background: linear-gradient(160deg, #57a2f7 0%, #3f87f5 45%, #2b66e8 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -77,9 +77,9 @@ body.landing {
 }
 
 /* Accent (coerente col brand ma su fondo chiaro) */
-.landing-accent { background: linear-gradient(135deg, #0ea5b7 0%, #1f6bff 100%); }
+.landing-accent { background: linear-gradient(160deg, #57a2f7 0%, #2b66e8 100%); }
 .landing-accent-text {
-    background: linear-gradient(135deg, #0e8fa0 0%, #1f6bff 100%);
+    background: linear-gradient(160deg, #3f87f5 0%, #2b66e8 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
@@ -107,11 +107,11 @@ body.landing {
 .flatpickr-calendar { border-radius: 16px; box-shadow: 0 18px 50px rgba(15,23,42,.18); font-family: inherit; }
 .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange,
 .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover {
-    background: #1f6bff; border-color: #1f6bff; color: #fff;
-    box-shadow: -10px 0 0 #1f6bff;
+    background: #2b66e8; border-color: #2b66e8; color: #fff;
+    box-shadow: -10px 0 0 #2b66e8;
 }
 .flatpickr-day.inRange { background: #e8f0ff; border-color: #e8f0ff; box-shadow: -5px 0 0 #e8f0ff, 5px 0 0 #e8f0ff; }
-.flatpickr-day.today { border-color: #1f6bff; }
+.flatpickr-day.today { border-color: #2b66e8; }
 .flatpickr-day:hover { background: #eef2f7; }
 .flatpickr-months .flatpickr-month, .flatpickr-current-month, .flatpickr-weekday { color: #0f172a; }
 .flatpickr-day.flatpickr-disabled { color: #cbd5e1; }
