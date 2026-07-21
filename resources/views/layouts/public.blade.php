@@ -85,8 +85,8 @@
                 <div>
                     <h4 class="text-sm font-semibold uppercase tracking-wider text-white/50">Contatti</h4>
                     <ul class="mt-4 space-y-2 text-sm text-white/70">
-                        <li>info@hostup.it</li>
-                        <li>+39 000 000 0000</li>
+                        <li><a href="mailto:info@hostup.it" class="transition hover:text-white">info@hostup.it</a></li>
+                        <li><a href="tel:+393793922627" class="transition hover:text-white">+39 379 392 2627</a></li>
                     </ul>
                 </div>
             </div>

@@ -211,7 +211,8 @@
                         gratuita e senza impegno.
                     </p>
                     <ul class="mt-8 space-y-3 text-white/75">
-                        <li class="flex items-center gap-3"><span class="text-cyan">✉</span> info@hostup.it</li>
+                        <li class="flex items-center gap-3"><span class="text-cyan">✉</span> <a href="mailto:info@hostup.it" class="transition hover:text-white">info@hostup.it</a></li>
+                        <li class="flex items-center gap-3"><span class="text-cyan">📞</span> <a href="tel:+393793922627" class="transition hover:text-white">+39 379 392 2627</a></li>
                     </ul>
                 </div>
 
