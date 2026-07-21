@@ -1,15 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
   <defs>
-    <linearGradient id="hu" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#11d3c5"/>
-      <stop offset=".55" stop-color="#1f6bff"/>
-      <stop offset="1" stop-color="#4a8bff"/>
+    <linearGradient id="hu" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#57a2f7"/>
+      <stop offset="1" stop-color="#2b66e8"/>
     </linearGradient>
   </defs>
-  <rect width="48" height="48" rx="12" fill="url(#hu)"/>
-  <g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M11 23 L24 11 L37 23 V37 a1 1 0 0 1 -1 1 H12 a1 1 0 0 1 -1 -1 Z"/>
-    <path d="M24 36 V25"/>
-    <path d="M19 29 L24 24 L29 29"/>
+  <rect width="48" height="48" rx="13" fill="url(#hu)"/>
+  <g fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 17 V34"/>
+    <path d="M12 25 H20"/>
+    <path d="M20 34 V12"/>
+    <path d="M15.5 16 L20 11.5 L24.5 16"/>
+    <path d="M27.5 17 V27.4 a4.6 4.6 0 0 0 9.2 0 V17"/>
   </g>
 </svg>

@@ -8,8 +8,14 @@
     {{-- HERO --}}
     <section class="relative min-h-[100svh] flex items-center justify-center overflow-hidden">
         <div class="absolute inset-0">
-            <img src="https://picsum.photos/seed/hostup-hero/1920/1200" alt="" class="h-full w-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-b from-navy-950/85 via-navy-950/60 to-navy-950"></div>
+            @if ($heroImage)
+                <img src="{{ $heroImage }}" alt="" class="h-full w-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-b from-navy-950/85 via-navy-950/65 to-navy-950"></div>
+            @else
+                <div class="absolute inset-0 bg-gradient-to-b from-navy-900 via-navy-950 to-navy-950"></div>
+                <div class="absolute -left-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-cyan/10 blur-3xl"></div>
+                <div class="absolute -bottom-32 -right-32 h-[34rem] w-[34rem] rounded-full bg-blue/10 blur-3xl"></div>
+            @endif
         </div>
 
         <div class="relative z-10 mx-auto max-w-4xl px-5 text-center hu-reveal">
@@ -197,8 +203,9 @@
 
     {{-- CONTATTI / LEAD FORM --}}
     <section id="contatti" class="relative overflow-hidden border-t border-white/10">
-        <img src="https://picsum.photos/seed/hostup-cta/1920/900" class="absolute inset-0 h-full w-full object-cover" alt="">
-        <div class="absolute inset-0 bg-navy-950/90"></div>
+        <div class="absolute inset-0 bg-navy-950"></div>
+        <div class="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-cyan/10 blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-blue/10 blur-3xl"></div>
 
         <div class="relative mx-auto max-w-7xl px-5 sm:px-8 py-24">
             <div class="grid items-start gap-12 lg:grid-cols-2">

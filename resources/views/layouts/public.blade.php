@@ -26,10 +26,27 @@
                     <a href="{{ route('home') }}#immobili" class="rounded-xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/6 hover:text-white">Immobili</a>
                 </div>
 
-                <a href="{{ route('home') }}#contatti"
-                   class="brand-gradient rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg ring-1 ring-white/20 transition hover:opacity-90">
-                    Valutazione gratuita
-                </a>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('home') }}#contatti"
+                       class="brand-gradient hidden rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg ring-1 ring-white/20 transition hover:opacity-90 sm:inline-block">
+                        Valutazione gratuita
+                    </a>
+                    <button id="menu-btn" type="button" aria-label="Apri il menu" aria-expanded="false"
+                            class="rounded-xl p-2.5 text-white/80 transition hover:bg-white/10 md:hidden">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7h16M4 12h16M4 17h16"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Mobile menu --}}
+            <div id="mobile-menu" class="hidden border-t border-white/10 pb-4 md:hidden">
+                <div class="flex flex-col gap-1 pt-3">
+                    <a href="{{ route('home') }}#servizi" class="rounded-xl px-3 py-2.5 text-sm text-white/80 hover:bg-white/10">Servizi</a>
+                    <a href="{{ route('home') }}#tecnologia" class="rounded-xl px-3 py-2.5 text-sm text-white/80 hover:bg-white/10">Tecnologia</a>
+                    <a href="{{ route('home') }}#come-funziona" class="rounded-xl px-3 py-2.5 text-sm text-white/80 hover:bg-white/10">Come funziona</a>
+                    <a href="{{ route('home') }}#immobili" class="rounded-xl px-3 py-2.5 text-sm text-white/80 hover:bg-white/10">Immobili</a>
+                    <a href="{{ route('home') }}#contatti" class="brand-gradient mt-2 rounded-xl px-3 py-2.5 text-center text-sm font-semibold text-white">Valutazione gratuita</a>
+                </div>
             </div>
         </nav>
     </header>
@@ -92,6 +109,20 @@
         };
         onScroll();
         window.addEventListener('scroll', onScroll, { passive: true });
+
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        menuBtn.addEventListener('click', () => {
+            const open = mobileMenu.classList.toggle('hidden') === false;
+            menuBtn.setAttribute('aria-expanded', open);
+            if (open) nav.classList.add('glass', 'border-white/10');
+            else onScroll();
+        });
+        mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+            mobileMenu.classList.add('hidden');
+            menuBtn.setAttribute('aria-expanded', 'false');
+            onScroll();
+        }));
     </script>
     @stack('scripts')
 </body>

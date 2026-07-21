@@ -1,13 +1,16 @@
 @php
     $cover = $property->coverPhoto ?? $property->photos->first();
-    $img = $cover?->url ?? 'https://picsum.photos/seed/hostup-fallback/800/600';
 @endphp
 
 <a href="{{ route('properties.show', $property) }}"
    class="group block overflow-hidden rounded-2xl glass transition hover:-translate-y-1 hover:ring-cyan/40 hover:shadow-2xl">
     <div class="relative aspect-[4/3] overflow-hidden">
-        <img src="{{ $img }}" alt="{{ $property->title }}"
-             class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+        @if ($cover)
+            <img src="{{ $cover->url }}" alt="{{ $property->title }}"
+                 class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+        @else
+            <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-navy-900 to-navy-950 text-6xl">🏡</div>
+        @endif
         <div class="absolute left-3 top-3 rounded-full bg-navy-950/70 px-3 py-1 text-xs font-semibold text-white backdrop-blur ring-1 ring-white/15">
             {{ $property->city }}
         </div>

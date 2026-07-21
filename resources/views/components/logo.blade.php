@@ -3,18 +3,30 @@
     'badge' => 44,       // badge square in px
 ])
 
+@php $uid = 'hu' . uniqid(); @endphp
+
 <span {{ $attributes->merge(['class' => 'flex items-center gap-3']) }}>
-    <span class="brand-gradient grid place-items-center rounded-[14px] shadow-lg ring-1 ring-white/20"
-          style="width: {{ $badge }}px; height: {{ $badge }}px;" aria-hidden="true" title="HostUp">
-        {{-- Casetta (Host) + freccia su (Up) --}}
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-             class="opacity-95" style="width: {{ round($badge * 0.52) }}px; height: {{ round($badge * 0.52) }}px;">
-            <path d="M4 11 L12 4 L20 11 V19 a1 1 0 0 1 -1 1 H5 a1 1 0 0 1 -1 -1 Z"/>
-            <path d="M12 18 V11"/>
-            <path d="M9 13.5 L12 10.5 L15 13.5"/>
-        </svg>
-    </span>
-    <span class="font-extrabold tracking-tight leading-none" style="font-size: {{ $size }}px;">
-        <span class="text-white/90">Host</span><span class="text-gradient font-black">Up</span>
+    {{-- Badge: monogramma HU con freccia verso l'alto --}}
+    <svg viewBox="0 0 48 48" class="shadow-lg rounded-[13px]" aria-hidden="true"
+         style="width: {{ $badge }}px; height: {{ $badge }}px;">
+        <defs>
+            <linearGradient id="{{ $uid }}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#57a2f7"/>
+                <stop offset="1" stop-color="#2b66e8"/>
+            </linearGradient>
+        </defs>
+        <rect width="48" height="48" rx="13" fill="url(#{{ $uid }})"/>
+        <g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+            {{-- H (l'asta destra sale e diventa freccia = Up) --}}
+            <path d="M11 17 V34"/>
+            <path d="M11 25 H19"/>
+            <path d="M19 34 V12"/>
+            <path d="M14.8 15.8 L19 11.6 L23.2 15.8"/>
+            {{-- U --}}
+            <path d="M28 17 V27.5 a4.5 4.5 0 0 0 9 0 V17"/>
+        </g>
+    </svg>
+    <span class="font-black tracking-tight leading-none" style="font-size: {{ $size }}px;">
+        <span class="text-white">Host</span><span style="color:#3f87f5;">Up</span>
     </span>
 </span>
