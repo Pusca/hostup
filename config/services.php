@@ -41,4 +41,9 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    'hostup' => [
+        // Dove arrivano le notifiche delle richieste dal form proprietari.
+        'owner_lead_email' => env('OWNER_LEAD_EMAIL', 'puscastanislav@gmail.com'),
+    ],
+
 ];

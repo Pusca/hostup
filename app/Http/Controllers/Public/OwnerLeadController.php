@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Mail\OwnerLeadReceived;
 use App\Models\OwnerLead;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class OwnerLeadController extends Controller
 {
@@ -30,7 +33,15 @@ class OwnerLeadController extends Controller
             'message' => 'messaggio',
         ]);
 
-        OwnerLead::create($data);
+        $lead = OwnerLead::create($data);
+
+        // La notifica email non deve mai far fallire il form: il lead è già in DB.
+        try {
+            Mail::to(config('services.hostup.owner_lead_email'))
+                ->send(new OwnerLeadReceived($lead));
+        } catch (\Throwable $e) {
+            Log::warning('Notifica lead non inviata: ' . $e->getMessage());
+        }
 
         return redirect()->to(route('home') . '#contatti')
             ->with('status', 'Richiesta inviata! Ti ricontatteremo entro 24 ore.');
