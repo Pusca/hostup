@@ -8,14 +8,8 @@
     {{-- HERO --}}
     <section class="relative min-h-[100svh] flex items-center justify-center overflow-hidden">
         <div class="absolute inset-0">
-            @if ($heroImage)
-                <img src="{{ $heroImage }}" alt="" class="h-full w-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-b from-navy-950/85 via-navy-950/65 to-navy-950"></div>
-            @else
-                <div class="absolute inset-0 bg-gradient-to-b from-navy-900 via-navy-950 to-navy-950"></div>
-                <div class="absolute -left-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-cyan/10 blur-3xl"></div>
-                <div class="absolute -bottom-32 -right-32 h-[34rem] w-[34rem] rounded-full bg-blue/10 blur-3xl"></div>
-            @endif
+            <img src="{{ asset('brand/hero-italia.jpg') }}" alt="" class="h-full w-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-b from-navy-950/85 via-navy-950/65 to-navy-950"></div>
         </div>
 
         <div class="relative z-10 mx-auto w-full max-w-4xl px-5 pt-20 pb-10 text-center hu-reveal sm:pt-24">
