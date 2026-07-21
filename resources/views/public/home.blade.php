@@ -18,17 +18,17 @@
             @endif
         </div>
 
-        <div class="relative z-10 mx-auto max-w-4xl px-5 text-center hu-reveal">
-            <p class="text-sm font-semibold uppercase tracking-[0.25em] text-cyan">Gestione affitti brevi</p>
-            <h1 class="mt-4 text-5xl font-extrabold tracking-tight leading-[1.05] sm:text-7xl">
-                Il tuo immobile rende.<br><span class="text-gradient">Noi lo gestiamo.</span>
+        <div class="relative z-10 mx-auto w-full max-w-4xl px-5 pt-20 pb-10 text-center hu-reveal sm:pt-24">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-cyan sm:text-sm sm:tracking-[0.25em]">Gestione affitti brevi</p>
+            <h1 class="mt-3 text-[2.5rem] font-extrabold tracking-tight leading-[1.08] sm:mt-4 sm:text-7xl sm:leading-[1.05]">
+                Il tuo immobile rende.<br class="hidden sm:block"> <span class="text-gradient">Noi lo gestiamo.</span>
             </h1>
-            <p class="mx-auto mt-6 max-w-2xl text-lg text-white/75">
+            <p class="mx-auto mt-5 max-w-2xl text-base text-white/75 sm:mt-6 sm:text-lg">
                 Annunci, prezzi, calendari, ospiti e pagamenti: gestiamo tutto noi, con un software costruito in casa.
                 Tu ricevi le prenotazioni e il rendiconto, senza pensieri.
             </p>
 
-            <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <div class="mx-auto mt-8 flex max-w-md flex-col items-stretch justify-center gap-3 sm:mt-10 sm:max-w-none sm:flex-row sm:items-center sm:gap-4">
                 <a href="#contatti"
                    class="brand-gradient rounded-xl px-8 py-4 text-base font-semibold text-white shadow-2xl ring-1 ring-white/20 transition hover:opacity-90">
                     Richiedi una valutazione gratuita
@@ -39,15 +39,15 @@
                 </a>
             </div>
 
-            <div class="mx-auto mt-12 grid max-w-2xl grid-cols-3 gap-4 text-center">
+            <div class="mx-auto mt-10 grid max-w-2xl grid-cols-3 gap-2.5 text-center sm:mt-12 sm:gap-4">
                 @foreach ([
                     ['0', 'doppie prenotazioni'],
                     ['24/7', 'prenotazioni online'],
                     ['1', 'calendario unico'],
                 ] as [$num, $label])
-                    <div class="glass rounded-2xl px-3 py-4">
-                        <div class="text-2xl font-extrabold text-gradient sm:text-3xl">{{ $num }}</div>
-                        <div class="mt-1 text-xs text-white/60 sm:text-sm">{{ $label }}</div>
+                    <div class="glass rounded-2xl px-2 py-3 sm:px-3 sm:py-4">
+                        <div class="text-xl font-extrabold text-gradient sm:text-3xl">{{ $num }}</div>
+                        <div class="mt-1 text-[11px] leading-tight text-white/60 sm:text-sm">{{ $label }}</div>
                     </div>
                 @endforeach
             </div>

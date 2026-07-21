@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('brand/hu-badge.png') }}" type="image/png">
     <title>@yield('title', 'HostUp — Gestione affitti brevi in automazione')</title>
     <meta name="description" content="@yield('meta_description', 'Gestiamo affitti brevi con tecnologia nostra: annunci, prezzi, calendari sincronizzati, prenotazione diretta e ospiti. Il tuo immobile rende, tu non ci pensi.')">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -16,8 +16,8 @@
     {{-- NAV --}}
     <header id="nav" class="fixed inset-x-0 top-0 z-50 transition-all duration-300 border-b border-transparent">
         <nav class="mx-auto max-w-7xl px-5 sm:px-8">
-            <div class="flex h-20 items-center justify-between">
-                <a href="{{ route('home') }}"><x-logo :size="20" :badge="42" /></a>
+            <div class="flex h-16 items-center justify-between sm:h-20">
+                <a href="{{ route('home') }}"><x-logo :size="19" :badge="38" /></a>
 
                 <div class="hidden items-center gap-2 md:flex">
                     <a href="{{ route('home') }}#servizi" class="rounded-xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/6 hover:text-white">Servizi</a>
