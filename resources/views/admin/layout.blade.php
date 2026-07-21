@@ -21,6 +21,13 @@
                         @php $r = request()->routeIs(...); @endphp
                         <a href="{{ route('admin.dashboard') }}" class="rounded-lg px-3 py-2 text-sm {{ request()->routeIs('admin.dashboard') ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white' }}">Dashboard</a>
                         <a href="{{ route('admin.properties.index') }}" class="rounded-lg px-3 py-2 text-sm {{ request()->routeIs('admin.properties.*') || request()->routeIs('admin.availability.*') ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white' }}">Immobili</a>
+                        @php $newLeads = \App\Models\OwnerLead::where('status', 'new')->count(); @endphp
+                        <a href="{{ route('admin.leads.index') }}" class="rounded-lg px-3 py-2 text-sm {{ request()->routeIs('admin.leads.*') ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white' }}">
+                            Richieste
+                            @if ($newLeads > 0)
+                                <span class="ml-1 rounded-full bg-cyan/20 px-2 py-0.5 text-xs font-semibold text-cyan">{{ $newLeads }}</span>
+                            @endif
+                        </a>
                         <a href="{{ route('home') }}" target="_blank" class="rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white">Sito ↗</a>
                     </nav>
                 </div>

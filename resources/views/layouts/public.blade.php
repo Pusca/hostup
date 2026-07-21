@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
-    <title>@yield('title', 'HostUp — Affitti brevi gestiti a 360°')</title>
-    <meta name="description" content="@yield('meta_description', 'Case e ville selezionate per soggiorni indimenticabili. Prenotazione diretta, nessuna commissione nascosta.')">
+    <title>@yield('title', 'HostUp — Gestione affitti brevi in automazione')</title>
+    <meta name="description" content="@yield('meta_description', 'Gestiamo affitti brevi con tecnologia nostra: annunci, prezzi, calendari sincronizzati, prenotazione diretta e ospiti. Il tuo immobile rende, tu non ci pensi.')">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="font-sans antialiased text-white/90 bg-navy-950">
@@ -20,14 +20,15 @@
                 <a href="{{ route('home') }}"><x-logo :size="20" :badge="42" /></a>
 
                 <div class="hidden items-center gap-2 md:flex">
+                    <a href="{{ route('home') }}#servizi" class="rounded-xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/6 hover:text-white">Servizi</a>
+                    <a href="{{ route('home') }}#tecnologia" class="rounded-xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/6 hover:text-white">Tecnologia</a>
+                    <a href="{{ route('home') }}#come-funziona" class="rounded-xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/6 hover:text-white">Come funziona</a>
                     <a href="{{ route('home') }}#immobili" class="rounded-xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/6 hover:text-white">Immobili</a>
-                    <a href="{{ route('home') }}#come-lavoriamo" class="rounded-xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/6 hover:text-white">Come lavoriamo</a>
-                    <a href="{{ route('home') }}#esperienze" class="rounded-xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/6 hover:text-white">Esperienze</a>
                 </div>
 
-                <a href="{{ route('home') }}#immobili"
+                <a href="{{ route('home') }}#contatti"
                    class="brand-gradient rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg ring-1 ring-white/20 transition hover:opacity-90">
-                    Prenota ora
+                    Valutazione gratuita
                 </a>
             </div>
         </nav>
@@ -52,15 +53,16 @@
                 <div>
                     <x-logo :size="22" :badge="44" />
                     <p class="mt-4 max-w-xs text-sm text-white/60">
-                        Soggiorni curati nei luoghi più belli. Prenotazione diretta, attenzione ai dettagli.
+                        Gestione professionale di affitti brevi, con tecnologia costruita in casa. Il tuo immobile rende, tu non ci pensi.
                     </p>
                 </div>
                 <div>
                     <h4 class="text-sm font-semibold uppercase tracking-wider text-white/50">Esplora</h4>
                     <ul class="mt-4 space-y-2 text-sm text-white/80">
-                        <li><a href="{{ route('properties.index') }}" class="transition hover:text-white">Tutti gli immobili</a></li>
-                        <li><a href="{{ route('home') }}#come-lavoriamo" class="transition hover:text-white">Come lavoriamo</a></li>
-                        <li><a href="{{ route('home') }}#esperienze" class="transition hover:text-white">Esperienze</a></li>
+                        <li><a href="{{ route('home') }}#servizi" class="transition hover:text-white">Servizi</a></li>
+                        <li><a href="{{ route('home') }}#come-funziona" class="transition hover:text-white">Come funziona</a></li>
+                        <li><a href="{{ route('home') }}#contatti" class="transition hover:text-white">Valutazione gratuita</a></li>
+                        <li><a href="{{ route('properties.index') }}" class="transition hover:text-white">Prenota un soggiorno</a></li>
                     </ul>
                 </div>
                 <div>

@@ -7,8 +7,10 @@ use App\Http\Controllers\Admin\PropertyController as AdminPropertyController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Public\CheckoutController;
 use App\Http\Controllers\Admin\ChannelLinkController;
+use App\Http\Controllers\Admin\OwnerLeadController as AdminOwnerLeadController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\IcalController;
+use App\Http\Controllers\Public\OwnerLeadController;
 use App\Http\Controllers\Public\PropertyController;
 use App\Http\Controllers\Public\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -17,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 |--- Public site ---------------------------------------------------------
 */
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::post('/proprietari/richiesta', [OwnerLeadController::class, 'store'])->name('owners.lead');
 Route::get('/immobili', [PropertyController::class, 'index'])->name('properties.index');
 Route::get('/immobili/{property}', [PropertyController::class, 'show'])->name('properties.show');
 Route::post('/immobili/{property}/preventivo', [PropertyController::class, 'quote'])->name('properties.quote');
@@ -66,4 +69,9 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // Channels (iCal sync)
     Route::post('/immobili/{property}/canali', [ChannelLinkController::class, 'update'])->name('channels.update');
     Route::post('/immobili/{property}/canali/sync', [ChannelLinkController::class, 'sync'])->name('channels.sync');
+
+    // Owner leads (richieste dal sito aziendale)
+    Route::get('/richieste', [AdminOwnerLeadController::class, 'index'])->name('leads.index');
+    Route::patch('/richieste/{lead}', [AdminOwnerLeadController::class, 'update'])->name('leads.update');
+    Route::delete('/richieste/{lead}', [AdminOwnerLeadController::class, 'destroy'])->name('leads.destroy');
 });
